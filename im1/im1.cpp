@@ -1,101 +1,114 @@
 
-
+#include <iostream>
 #include "im1.hpp"
+#include "get.hpp"
 #include <opencv2/opencv.hpp>
 #include <math.h>
 
 
-// function to get row range and column range of image window in getWindow() function
-cv::Mat getRowCol (cv::Mat M, int i1, int i2, int j1, int j2)
-{
-	return M.rowRange(i1, i2).colRange(j1, j2);
-}
-
-
 int getMedian (cv::Mat window)
-{
-	cv::Mat window_thread = cv::Mat::zeros(1, window.rows*window.cols, CV_64FC1);
-	window_thread = window.reshape(1, window.rows*window.cols);
+{	
+	cv::Mat window_thread = cv::Mat::zeros(1, window.rows*window.cols, CV_8UC1);
+	window_thread = window.clone().reshape(0, window.rows*window.cols);
 	cv::sort(window_thread, window_thread, CV_SORT_ASCENDING);
 
-	int median
+	int median;
 	if ((window.rows*window.cols)%2==1) {
-		median = window_thread.row(0).col(floor(window_thread.cols/2));
+		median = window_thread.at<uchar>(floor(window_thread.rows/2)-1);
 	} else {
-		median = (window_thread.row(0).col(window_thread.cols/2) + 
-				  window_thread.row(0).col(window_thread.cols/2))/2
+		median = (window_thread.at<uchar>(floor(window_thread.rows/2)-1) + 
+				  window_thread.at<uchar>(floor(window_thread.rows/2)))/2;
 	}
 
 	return median;
 }
 
 
-// Window grabbing function - presents image window as windowSize x windowSize matrix
-cv::Mat windowProcess::getWindow (cv::Mat image, int windowSize, int i, int j)
-{
-	int height = image.rows;
-	int width = image.cols;
-	int limit = floor(windowSize/2);
+cv::Mat medianFilter (cv::Mat image, int windowSize)
+{	
+	if (windowSize%2!=1) {
+		std::cout << "ERROR: windowSize must be odd int" << std::endl;
+	} else {
+		int height = image.rows;
+		int width = image.cols;
 
-	cv::Mat window = cv::Mat::zeros(windowSize, windowSize, CV_64FC1);
-	/** 
-	CV_##AC#
-	CV_   is compulsory prefix
-	##    is the number of bits per matrix element
-	A     is the type of base element
-	C#	  # is the number of channels
-	**/
+		cv::Mat window = cv::Mat::zeros(windowSize, windowSize, CV_64FC1);
+		cv::Mat imageOut = cv::Mat::zeros(height, width, CV_64FC1);
+		double count = 0;
+		double progress;
+		double last_progress = 1000;
+		int total = image.rows*image.cols;
 
-	if (i<limit) {
-		if (j<limit) {
-			window = getRowCol(image, 0, i+limit+1, 0, j+limit+1);
-		} else if (j>width-limit-1) {
-			window = getRowCol(image, 0, i+limit+1, j-limit, width);
-		} else {
-			window = getRowCol(image, 0, i+limit+1, j-limit, j+limit+1);
+		for (int i=0; i<height; i++) {
+			for (int j=0; j<width; j++) {
+				window = get::getWindow(image, windowSize, i, j);
+				imageOut.row(i).col(j) = getMedian(window);
+				count++;
+				progress = floor(count/56852*100);
+				if (progress != last_progress){
+					if (std::fmod(progress,5)==0) {
+						std::cout << progress << "%" << "\n";
+						last_progress = progress;
+					}
+				}
+			}
 		}
-	}
-	else if (j<limit) {
-		if (i<limit) {
-			window = getRowCol(image, 0, i+limit+1, 0, j+limit+1);
-		} else if (i>height-limit-1) {
-			window = getRowCol(image, i-limit, height, 0, j+limit+1);
-		} else {
-			window = getRowCol(image, i-limit, i+limit+1, 0, j+limit+1);
-		}
-	}
-	else if (i>height-limit-1) {
-		if (j<limit) {
-			window = getRowCol(image, i-limit, height, 0, j+limit+1);
-		} else if (j>width-limit-1) {
-			window = getRowCol(image, i-limit, height, j-limit, width);
-		} else {
-			window = getRowCol(image, i-limit, height, j-limit, j+limit+1);
-		}
-	}
-	else if (j>width-limit-1) {
-		if (i<limit) {
-			window = getRowCol(image, 0, i+limit+1, j-limit, width);
-		} else if (i>height-limit-1) {
-			window = getRowCol(image, i-limit, height, j-limit, width);
-		} else {
-			window = getRowCol(image, i-limit, i+limit+1, j-limit, width);
-		}
-	}
-	else {
-		window = getRowCol(image, i-limit, i+limit+1, j-limit, j+limit+1);
-	}
 
-	return window;
+		imageOut.convertTo(imageOut, CV_8UC1);
+		return imageOut;
+	}
 }
 
 
+imageProcess::imageProcess (std::string IMAGE_FILE_PATH)
+	: file_path(IMAGE_FILE_PATH) {}
 
-imageProcess::imageProcess (cv::Mat new_image)
-	: image(new_image) {}
 
-
-imageProcess::medianFilter ()
+cv::Mat imageProcess::medianFilterGray (int windowSize)
 {
+	// Read as grayscale image
+	cv::Mat image = cv::imread(file_path, cv::IMREAD_GRAYSCALE);
 
+	if(image.empty())
+    {
+        std::cout << "Could not read the image: " << file_path << std::endl;
+    }
+
+	std::cout << "Processing GRAY Median Filter" << std::endl;
+	cv::Mat imageOut = medianFilter(image, windowSize);
+
+	return imageOut;
+}
+
+
+cv::Mat imageProcess::medianFilterRGB (int windowSize)
+{	
+	// Read as RGB image
+	cv::Mat image = cv::imread(file_path, cv::IMREAD_COLOR);
+	
+	if(image.empty())
+    {
+        std::cout << "Could not read the image: " << file_path << std::endl;
+    }
+
+	// Split image into BGR color channels
+	cv::Mat bgr[3];
+	cv::split (image, bgr); // split the color channels int the image
+	cv::Mat blue = bgr[0];
+	cv::Mat green = bgr[1];
+	cv::Mat red = bgr[2];
+
+	std::cout << "Processing RGB Median Filter" << std::endl;
+	std::cout << "Blue  Channel" << "\n";
+	cv::Mat blueOut = medianFilter(blue, windowSize);
+	std::cout << "Green Channel" << "\n";
+	cv::Mat greenOut = medianFilter(green, windowSize);
+	std::cout << "Red Channel" << "\n";
+	cv::Mat redOut = medianFilter(red, windowSize);
+
+	cv::Mat imageChannels[3] = {blueOut, greenOut, redOut};
+	cv::Mat imageOut(bgr[0].size(), CV_8UC3);
+	cv::merge (imageChannels, 3, imageOut);
+
+	return imageOut;
 }
