@@ -40,5 +40,12 @@ class imageKernel
 		cv::Mat
 		smooth ();
 
+		cv::Mat
+		customInput ();
+
+	private:
+		cv::Mat
+		applyKernel(cv::Mat kernel);
+
 };
 #endif

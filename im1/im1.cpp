@@ -73,9 +73,9 @@ cv::Mat adaptiveFilter(cv::Mat image, int windowSize)
 	cv::Mat imageOut = cv::Mat::zeros (image.rows, image.cols, CV_64FC1);
 
 	int p; // pixel(i,j) i.e. p(i,j)
-	double m; // mean at window centered at p(i,j)
-	double v; // variance at window centered at p(i,j)
-	double lv; // average local variance of window centered aroung p(i,j)
+	double m, // mean at window centered at p(i,j)
+		   v, // variance at window centered at p(i,j)
+	 	  lv; // average local variance of window centered aroung p(i,j)
 
 	double count = 0;
 	double progress;
@@ -109,35 +109,6 @@ cv::Mat adaptiveFilter(cv::Mat image, int windowSize)
 
 	return imageOut;
 }
-
-
-// cv::Mat getGrayImg (std::string file_path) {
-// 	// Read as grayscale image
-// 	cv::Mat image = cv::imread(file_path, cv::IMREAD_GRAYSCALE);
-
-// 	if(image.empty())
-//     {
-//         std::cout << "Could not read the image: " << file_path << std::endl;
-//     }
-
-//     return image;
-// }
-
-
-// cv::Mat getColorImg (std::string file_path) {
-// 	// Read as RGB image
-// 	cv::Mat image = cv::imread(file_path, cv::IMREAD_COLOR);
-
-// 	if(image.empty())
-//     {
-//         std::cout << "Could not read the image: " << file_path << std::endl;
-//     }
-
-//     return image;
-// }
-
-
-
 
 
 imageProcess::imageProcess (std::string IMAGE_FILE_PATH)

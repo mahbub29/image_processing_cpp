@@ -128,8 +128,7 @@ cv::Mat get::getVariances (cv::Mat image, int windowSize, cv::Mat means)
 	cv::Mat variances = cv::Mat::zeros(image.rows, image.cols, CV_64FC1);
 	cv::Mat_<double> window;
 	cv::Mat_<double> sqr_window;
-	double m;
-	double v;
+	double m, v;
 
 	std::cout << "Calculating Variances" << "\n";
 	for (int i=0; i<height; i++) {
