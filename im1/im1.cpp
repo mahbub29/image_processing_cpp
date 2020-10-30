@@ -111,24 +111,44 @@ cv::Mat adaptiveFilter(cv::Mat image, int windowSize)
 }
 
 
+// cv::Mat getGrayImg (std::string file_path) {
+// 	// Read as grayscale image
+// 	cv::Mat image = cv::imread(file_path, cv::IMREAD_GRAYSCALE);
+
+// 	if(image.empty())
+//     {
+//         std::cout << "Could not read the image: " << file_path << std::endl;
+//     }
+
+//     return image;
+// }
+
+
+// cv::Mat getColorImg (std::string file_path) {
+// 	// Read as RGB image
+// 	cv::Mat image = cv::imread(file_path, cv::IMREAD_COLOR);
+
+// 	if(image.empty())
+//     {
+//         std::cout << "Could not read the image: " << file_path << std::endl;
+//     }
+
+//     return image;
+// }
+
+
+
 
 
 imageProcess::imageProcess (std::string IMAGE_FILE_PATH)
-	: file_path(IMAGE_FILE_PATH) {}
+	: GrayImg(get::getGrayImg(IMAGE_FILE_PATH)), ColorImg(get::getColorImg(IMAGE_FILE_PATH))
+	{}
 
 
 cv::Mat imageProcess::medianFilterGray (int windowSize)
 {
-	// Read as grayscale image
-	cv::Mat image = cv::imread(file_path, cv::IMREAD_GRAYSCALE);
-
-	if(image.empty())
-    {
-        std::cout << "Could not read the image: " << file_path << std::endl;
-    }
-
 	std::cout << "Processing GRAY Median Filter" << std::endl;
-	cv::Mat imageOut = medianFilter(image, windowSize);
+	cv::Mat imageOut = medianFilter(GrayImg, windowSize);
 	std::cout << "FINISHED" << "\n";
 
 	return imageOut;
@@ -137,17 +157,8 @@ cv::Mat imageProcess::medianFilterGray (int windowSize)
 
 cv::Mat imageProcess::medianFilterRGB (int windowSize)
 {	
-	// Read as RGB image
-	cv::Mat image = cv::imread(file_path, cv::IMREAD_COLOR);
-	
-	if(image.empty())
-    {
-        std::cout << "Could not read the image: " << file_path << std::endl;
-    }
-
-	// Split image into BGR color channels
-	cv::Mat bgr[3];
-	cv::split (image, bgr); // split the color channels int the image
+	cv::Mat bgr[3]; // Split image into BGR color channels
+	cv::split (ColorImg, bgr); // split the color channels int the image
 	cv::Mat blue = bgr[0];
 	cv::Mat green = bgr[1];
 	cv::Mat red = bgr[2];
@@ -171,16 +182,8 @@ cv::Mat imageProcess::medianFilterRGB (int windowSize)
 
 cv::Mat imageProcess::adaptiveFilterGray (int windowSize)
 {
-	// Read as grayscale image
-	cv::Mat image = cv::imread(file_path, cv::IMREAD_GRAYSCALE);
-
-	if(image.empty())
-    {
-        std::cout << "Could not read the image: " << file_path << std::endl;
-    }
-
     std::cout << "Processing GRAY Adaptive Filter" << std::endl;
-    cv::Mat imageOut = adaptiveFilter(image, windowSize);
+    cv::Mat imageOut = adaptiveFilter(GrayImg, windowSize);
     std::cout << "FINISHED" << "\n";
 
     return imageOut;
@@ -189,17 +192,8 @@ cv::Mat imageProcess::adaptiveFilterGray (int windowSize)
 
 cv::Mat imageProcess::adaptiveFilterColor (int windowSize)
 {
-	// Read as RGB image
-	cv::Mat image = cv::imread(file_path, cv::IMREAD_COLOR);
-	
-	if(image.empty())
-    {
-        std::cout << "Could not read the image: " << file_path << std::endl;
-    }
-
-	// Split image into BGR color channels
-	cv::Mat bgr[3];
-	cv::split (image, bgr); // split the color channels int the image
+	cv::Mat bgr[3]; // Split image into BGR color channels
+	cv::split (ColorImg, bgr); // split the color channels int the image
 	cv::Mat blue = bgr[0];
 	cv::Mat green = bgr[1];
 	cv::Mat red = bgr[2];

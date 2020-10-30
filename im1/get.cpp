@@ -146,3 +146,28 @@ cv::Mat get::getVariances (cv::Mat image, int windowSize, cv::Mat means)
 }
 
 
+cv::Mat get::getGrayImg (std::string file_path) {
+	// Read as grayscale image
+	cv::Mat image = cv::imread(file_path, cv::IMREAD_GRAYSCALE);
+
+	if(image.empty())
+    {
+        std::cout << "Could not read the image: " << file_path << std::endl;
+    }
+
+    return image;
+}
+
+
+cv::Mat get::getColorImg (std::string file_path) {
+	// Read as RGB image
+	cv::Mat image = cv::imread(file_path, cv::IMREAD_COLOR);
+
+	if(image.empty())
+    {
+        std::cout << "Could not read the image: " << file_path << std::endl;
+    }
+
+    return image;
+}
+

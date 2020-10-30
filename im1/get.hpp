@@ -24,6 +24,12 @@ class get
 		// get variances of image window area across every pixel of image
 		static cv::Mat
 		getVariances (cv::Mat image, int windowSize, cv::Mat means);
+
+		static cv::Mat
+		getGrayImg (std::string file_path);
+
+		static cv::Mat
+		getColorImg (std::string file_path);
 };
 #endif
 

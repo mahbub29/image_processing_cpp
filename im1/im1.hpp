@@ -1,6 +1,3 @@
-
-
-
 #ifndef IM1_H_
 #define IM1_H_
 
@@ -10,9 +7,10 @@
 
 class imageProcess
 {	
-	std::string file_path;
-
 	public:
+		cv::Mat GrayImg;
+		cv::Mat ColorImg;
+
 		imageProcess (std::string IMAGE_FILE_PATH);
 
 		cv::Mat
