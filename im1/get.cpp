@@ -73,7 +73,8 @@ cv::Mat get::getWindow (cv::Mat image, int windowSize, int i, int j)
 }
 
 
-std::string get::type2str(int type) {
+std::string get::getType (int type)
+{
 	std::string r;
 
 	uchar depth = type & CV_MAT_DEPTH_MASK;
@@ -95,3 +96,53 @@ std::string get::type2str(int type) {
 
 	return r;
 }
+
+
+cv::Mat get::getMeans (cv::Mat image, int windowSize)
+{	
+	int height = image.rows;
+	int width = image.cols;
+
+	cv::Mat means = cv::Mat::zeros(height, width, CV_64FC1);
+	cv::Mat window = cv::Mat::zeros(windowSize, windowSize, CV_64FC1);
+	double m;
+
+	std::cout << "Calculating Means" << "\n";
+	for (int i=0; i<height; i++) {
+		for (int j=0; j<width; j++) {
+			window = getWindow(image, windowSize, i, j);
+			m = cv::sum(window)[0]/(window.rows*window.cols);
+			means.at<double>(i,j) = m;
+		}
+	}
+	
+	return means;
+}
+
+
+cv::Mat get::getVariances (cv::Mat image, int windowSize, cv::Mat means)
+{	
+	int height = image.rows;
+	int width = image.cols;
+
+	cv::Mat variances = cv::Mat::zeros(image.rows, image.cols, CV_64FC1);
+	cv::Mat_<double> window;
+	cv::Mat_<double> sqr_window;
+	double m;
+	double v;
+
+	std::cout << "Calculating Variances" << "\n";
+	for (int i=0; i<height; i++) {
+		for (int j=0; j<width; j++) {
+			window = getWindow(image, windowSize, i, j);
+			m = means.at<double>(i,j);
+			cv::pow(window, 2, sqr_window);
+			v = cv::sum(sqr_window-m)[0]/(window.rows*window.cols);
+			variances.at<double>(i,j) = v;
+		}
+	}
+
+	return variances;
+}
+
+

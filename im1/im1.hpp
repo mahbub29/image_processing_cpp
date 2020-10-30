@@ -21,5 +21,11 @@ class imageProcess
 		cv::Mat
 		medianFilterRGB (int windowSize);
 
+		cv::Mat
+		adaptiveFilterGray (int windowSize);
+
+		cv::Mat
+		adaptiveFilterColor (int windowSize);
+
 };
 #endif
