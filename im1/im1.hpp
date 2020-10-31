@@ -25,5 +25,21 @@ class imageProcess
 		cv::Mat
 		adaptiveFilterColor (int windowSize);
 
+		void
+		kmeansSegmentation ();
+
+	private:
+		int
+		getMedian (cv::Mat window);
+
+		cv::Mat
+		medianFilter (cv::Mat image, int windowSize);
+
+		cv::Mat
+		adaptiveFilter (cv::Mat image, int windowSize);
+
+		static void
+		leftMouseClick (int event, int i, int j, int flags, void *params);
+
 };
 #endif

@@ -6,7 +6,10 @@
 #include <math.h>
 
 
-int getMedian (cv::Mat window)
+std::vector< std::vector<int> > LEFT_CLICKS;
+int n=0;
+
+int imageProcess::getMedian (cv::Mat window)
 {	
 	cv::Mat window_thread = cv::Mat::zeros(1, window.rows*window.cols, CV_8UC1);
 	window_thread = window.clone().reshape(0, window.rows*window.cols);
@@ -24,7 +27,7 @@ int getMedian (cv::Mat window)
 }
 
 
-cv::Mat medianFilter (cv::Mat image, int windowSize)
+cv::Mat imageProcess::medianFilter (cv::Mat image, int windowSize)
 {	
 	if (windowSize%2!=1) {
 		std::cout << "ERROR: windowSize must be odd int" << std::endl;
@@ -42,7 +45,7 @@ cv::Mat medianFilter (cv::Mat image, int windowSize)
 		for (int i=0; i<height; i++) {
 			for (int j=0; j<width; j++) {
 				window = get::getWindow(image, windowSize, i, j);
-				imageOut.row(i).col(j) = getMedian(window);
+				imageOut.row(i).col(j) = this->getMedian(window);
 				count++;
 				progress = floor(count/56852*100);
 				if (progress != last_progress){
@@ -60,7 +63,7 @@ cv::Mat medianFilter (cv::Mat image, int windowSize)
 }
 
 
-cv::Mat adaptiveFilter(cv::Mat image, int windowSize)
+cv::Mat imageProcess::adaptiveFilter(cv::Mat image, int windowSize)
 {
 	int height = image.rows;
 	int width = image.cols;
@@ -136,11 +139,11 @@ cv::Mat imageProcess::medianFilterRGB (int windowSize)
 
 	std::cout << "Processing RGB Median Filter" << std::endl;
 	std::cout << "Blue Channel" << "\n";
-	cv::Mat blueOut = medianFilter(blue, windowSize);
+	cv::Mat blueOut = this->medianFilter(blue, windowSize);
 	std::cout << "Green Channel" << "\n";
-	cv::Mat greenOut = medianFilter(green, windowSize);
+	cv::Mat greenOut = this->medianFilter(green, windowSize);
 	std::cout << "Red Channel" << "\n";
-	cv::Mat redOut = medianFilter(red, windowSize);
+	cv::Mat redOut = this->medianFilter(red, windowSize);
 	std::cout << "FINISHED" << "\n";
 
 	cv::Mat imageChannels[3] = {blueOut, greenOut, redOut};
@@ -154,7 +157,7 @@ cv::Mat imageProcess::medianFilterRGB (int windowSize)
 cv::Mat imageProcess::adaptiveFilterGray (int windowSize)
 {
     std::cout << "Processing GRAY Adaptive Filter" << std::endl;
-    cv::Mat imageOut = adaptiveFilter(GrayImg, windowSize);
+    cv::Mat imageOut = this->adaptiveFilter(GrayImg, windowSize);
     std::cout << "FINISHED" << "\n";
 
     return imageOut;
@@ -171,11 +174,11 @@ cv::Mat imageProcess::adaptiveFilterColor (int windowSize)
 
 	std::cout << "Processing RGB Adaptive Filter" << std::endl;
 	std::cout << "Blue Channel" << "\n";
-	cv::Mat blueOut = adaptiveFilter(blue, windowSize);
+	cv::Mat blueOut = this->adaptiveFilter(blue, windowSize);
 	std::cout << "Green Channel" << "\n";
-	cv::Mat greenOut = adaptiveFilter(green, windowSize);
+	cv::Mat greenOut = this->adaptiveFilter(green, windowSize);
 	std::cout << "Red Channel" << "\n";
-	cv::Mat redOut = adaptiveFilter(red, windowSize);
+	cv::Mat redOut = this->adaptiveFilter(red, windowSize);
 	std::cout << "FINISHED" << "\n";
 
 	cv::Mat imageChannels[3] = {blueOut, greenOut, redOut};
@@ -184,3 +187,53 @@ cv::Mat imageProcess::adaptiveFilterColor (int windowSize)
 
 	return imageOut;	
 }
+
+
+void imageProcess::kmeansSegmentation ()
+{	
+	cv::namedWindow ("Select Pixels", cv::WINDOW_NORMAL);
+	cv::Mat xyz;
+	cv::setMouseCallback ("Select Pixels", leftMouseClick, &xyz);
+	cv::imshow ("Select Pixels", ColorImg);
+
+	std::cout << "Select a minimum of 2 points.\n"
+				 "Press R to reset and clear your selection.\n"
+				 "Press V to verify your selection.\n"
+				 "Press Q to quit.\n\n";
+
+	char key1;
+
+	while (1) {
+		key1 = cv::waitKey(1);
+
+		if (key1 == 'v') {
+			if (LEFT_CLICKS.size()<2) {
+				std::cout << "ERROR: Select at least 2 points, or press \"R\" to clear "
+				"the list or \"Q\" to quit." << "\n";
+			}
+		} else if (key1 == 'q') {
+			cv::destroyAllWindows();
+			break;
+		} else {
+			// std::cout << "NOOOTTT" << "\n";
+		}
+	}
+}
+
+
+
+void imageProcess::leftMouseClick (int event, int j, int i, int flags, void *param)
+{
+	cv::Mat &xyz = *((cv::Mat*)param);
+	if (event==cv::EVENT_LBUTTONDOWN) {
+		std::cout << "row=" << i << ", col=" << j << "\n";
+		std::vector<int> v;
+		v.push_back(i);
+		v.push_back(j);
+		LEFT_CLICKS.push_back(v);
+		return;
+	}
+
+}
+
+
