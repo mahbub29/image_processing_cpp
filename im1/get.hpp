@@ -25,11 +25,17 @@ class get
 		static cv::Mat
 		getVariances (cv::Mat image, int windowSize, cv::Mat means);
 
+		// gets gray image conversion of input image file path
 		static cv::Mat
 		getGrayImg (std::string file_path);
 
+		// gets 3 channel RGB conversion of input image file path
 		static cv::Mat
 		getColorImg (std::string file_path);
+
+		// gets Grayscale, RGB or RGBij intensity vectors
+		static cv::Mat
+		get_nD_intensities (cv::Mat IMG, std::vector< std::vector<int> > selection, int dims=3);
 };
 #endif
 

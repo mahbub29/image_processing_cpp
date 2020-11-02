@@ -170,3 +170,61 @@ cv::Mat get::getColorImg (std::string file_path) {
     return image;
 }
 
+
+cv::Mat get::get_nD_intensities
+(cv::Mat IMG, std::vector< std::vector<int> > selection, int ndims) {
+	
+	// *** POSSIBLE ERROR HERE IN DATA TYPE CONVERSIONS AND ENTRIES
+	// *** CHECK WHEN DEBUGGINH
+
+	int i; // row number
+	int j; // column number
+	cv::Mat intensities = cv::Mat::zeros(ndims, selection.size(), CV_64FC1);
+	// for 1D each element contains grayscale intensity
+	// for 3D columns are B, G, R
+	// for 5D columns are B, G, R, i, j
+
+	if (ndims == 1) {
+		// For grayscale
+		for (int n=0; n<selection.size(); n++) {
+			i = selection[n][0];
+			j = selection[n][1];
+			
+			intensities.row(0).col(n) = IMG.row(i).col(j);	
+		}
+	} else {
+		// For color		
+		// split color image channels
+		cv::Mat bgr[3];
+		cv::split(IMG, bgr);
+		cv::Mat blue = bgr[0];
+		cv::Mat green = bgr[1];
+		cv::Mat red = bgr[2];	
+
+		for (int n=0; n<selection.size(); n++) {
+			i = selection[n][0];
+			j = selection[n][1];
+
+			intensities.row(0).col(n) = blue.row(i).col(j);
+			intensities.row(1).col(n) = green.row(i).col(j);
+			intensities.row(2).col(n) = red.row(i).col(j);
+
+			// if 5D add the row and column as the 4th and 5th dimensions respectively
+			if (ndims==5) {
+				intensities.row(3).col(n) = i;
+				intensities.row(4).col(n) = j;
+			}
+		}
+	}
+
+
+	return intensities;
+}
+
+
+
+
+
+
+
+

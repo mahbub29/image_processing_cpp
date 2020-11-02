@@ -116,7 +116,10 @@ cv::Mat imageProcess::adaptiveFilter(cv::Mat image, int windowSize)
 
 imageProcess::imageProcess (std::string IMAGE_FILE_PATH)
 	: GrayImg(get::getGrayImg(IMAGE_FILE_PATH)), ColorImg(get::getColorImg(IMAGE_FILE_PATH))
-	{}
+	{
+		int height = GrayImg.rows;
+		int width = GrayImg.cols;
+	}
 
 
 cv::Mat imageProcess::medianFilterGray (int windowSize)
@@ -191,9 +194,31 @@ cv::Mat imageProcess::adaptiveFilterColor (int windowSize)
 
 void imageProcess::kmeansSegmentation ()
 {	
+	std::cout << "Press 1 for Grayscale Segmentation.\n"
+				 "Press 2 for Color Segmentation.\n";
+
+	cv::Mat IMG;
+	bool keepAsking = true;
+	while (keepAsking) {
+		char option;
+
+		if (option=='1') {
+			IMG=GrayImg;
+			keepAsking = false;
+		}
+		else if (option=='2') {
+			IMG=ColorImg;
+			keepAsking = false;
+		}
+		else {
+			std::cout << "ERROR: That is not an option. Please press 1 for Grayscale "
+						 "Segmentation or 2 for Color Segmentation.\n";
+		}
+	}
+
 	cv::namedWindow ("Select Pixels", cv::WINDOW_NORMAL);
 	cv::Mat xyz;
-	cv::setMouseCallback ("Select Pixels", leftMouseClick, &xyz);
+	cv::setMouseCallback ("Select Pixels", this->leftMouseClick, &xyz);
 	cv::imshow ("Select Pixels", ColorImg);
 
 	std::cout << "Select a minimum of 2 points.\n"
@@ -202,24 +227,56 @@ void imageProcess::kmeansSegmentation ()
 				 "Press Q to quit.\n\n";
 
 	char key1;
-
 	while (1) {
 		key1 = cv::waitKey(1);
 
-		if (key1 == 'v') {
-			if (LEFT_CLICKS.size()<2) {
-				std::cout << "ERROR: Select at least 2 points, or press \"R\" to clear "
-				"the list or \"Q\" to quit." << "\n";
-			}
-		} else if (key1 == 'q') {
+		
+		if (key1=='q') {
 			cv::destroyAllWindows();
 			break;
-		} else {
-			// std::cout << "NOOOTTT" << "\n";
+		}
+		else if (key1=='r') {
+			LEFT_CLICKS.clear();
+			std::cout << "Pixel selections cleared.\n"
+						 "Please select minimum of 2 points in the image window, "
+						 "or press Q to quit." << "\n";
+		} else if (key1=='v') {
+			if (LEFT_CLICKS.size()<2) {
+				std::cout << "ERROR: Select at least 2 points, or press R to clear "
+				"the list or \"Q\" to quit." << "\n";
+			} else {
+				std::cout << "Your have selected " << LEFT_CLICKS.size() << " points. "
+							 "Is this correct?\nPress Y to confirm, R to clear the list, "
+							 "or continue clicking to add to your selection." << "\n";
+			}
+		} else if (key1=='y' && LEFT_CLICKS.size()>1) {
+
+			cv::Mat i_vec; // Matrix of intensity vectors
+
+			std::cout << "Running k-Means Segmentation..." << "\n";
+			if (IMG.channels() == 1) {
+				// retrieve Grayscale intensities
+				i_vec = get::get_nD_intensities (GrayImg, LEFT_CLICKS, 1);
+			}
+			else {
+				// retrieve RGB or RGBij intensities
+				bool selectingDim = true;
+				while (selectingDim) {
+					char selectDim;
+					std::cin >> selectDim;
+
+					if (selectDim=='3') {
+						i_vec = get::get_nD_intensities (ColorImg, LEFT_CLICKS, 3);
+					} else if (selectDim=='5') {
+						i_vec = get::get_nD_intensities (ColorImg, LEFT_CLICKS, 5);
+					} else {
+						std::cout << "ERROR: Please press either 3 or 5.\n";
+					}
+				}
+			}
 		}
 	}
 }
-
 
 
 void imageProcess::leftMouseClick (int event, int j, int i, int flags, void *param)
@@ -233,7 +290,124 @@ void imageProcess::leftMouseClick (int event, int j, int i, int flags, void *par
 		LEFT_CLICKS.push_back(v);
 		return;
 	}
-
 }
 
+
+std::vector<cv::Mat> imageProcess::kmeansColor_nD_segmentation (cv::Mat i_vec, int ndims)
+{
+	// number of k values
+	int k_num = i_vec.cols;
+
+	// split image matrix to BGR channels
+	cv::Mat imageThread = ColorImg.clone().reshape(3, 1);
+	
+	cv::Mat bgrThread[ndims];
+	cv::split(imageThread, bgrThread);
+
+	// convert image matrix to doubles
+	for (int i=0; i<3; i++) {
+        bgrThread[i].convertTo(bgrThread[i], CV_64FC1);
+    }
+
+    // add i and j dimensions if ndims requested is 5D
+    if (ndims==5) {
+    	int count = 0;
+    	for (int i=0; i<ColorImg.rows; i++) {
+	        for (int j=0; j<ColorImg.cols; j++) {
+	            bgrThread[3].row(0).col(count) = i;
+	            bgrThread[4].row(0).col(count) = j;
+	            count++;
+	        }
+	    }
+    }
+
+    cv::Mat imagePixelVectors;
+    std::vector<cv::Mat> m;
+    if (ndims==5) {
+    	m = {bgrThread[0], // B displacement
+    		 bgrThread[1], // G displacement
+    		 bgrThread[2], // R displacement
+    		 bgrThread[3], // i displacement
+    		 bgrThread[4]};// j displacement
+    } else {
+    	m = {bgrThread[0], // B displacement
+    		 bgrThread[1], // G displacement
+    		 bgrThread[2]};// R displacement
+    }
+    cv::vconcat(m, imagePixelVectors);
+
+    // Make vectors to store the cluster sums as well as the total nymber
+	// belonging to each cluster 
+	std::vector< cv::Mat_<double> > k_sums(k_num);
+	std::vector<int> k_tots(k_num);
+
+	// Matrix to store the difference between each image pixel and the currently
+	// calculated k-means values
+	cv::Mat_<double> delta = cv::Mat::zeros (imagePixelVectors.size(), CV_64FC1);
+
+	// calculate the root square distance (in terms of RGBij) each pixel in the image
+   	// to each of the selected pixel RGB values
+   	// i.e. d = sqrt(r^2 + g^2 + b^2 + i^2 + j^2)
+    // assign a k cluster number to each set of RGB differences
+
+	cv::Mat sqrDiff; // matrix to save the squared differeneces
+	cv::Mat pixelLabels = cv::Mat::ones(k_num, imageThread.cols, CV_32FC1); // array containing the k number of labels
+
+	for (int i=0; i<k_num; i++) {
+		if (ndims==5) {
+			k_sums[i] = cv::Mat::zeros (5,1,CV_64FC1);
+		} else {
+			k_sums[i] = cv::Mat::zeros (3,1,CV_64FC1);
+		}
+		k_tots[i] = 0;
+		cv::pow((imagePixelVectors - i_vec.col(i)), 2, sqrDiff); // calculate squared differences
+		cv::reduce(sqrDiff, delta.row(i), 0, cv::REDUCE_SUM, CV_64FC1); // sum the squared differnces
+		cv::sqrt(delta.row(i), delta.row(i)); // square-root of the sum
+		pixelLabels.row(i) = pixelLabels.row(i)*(i+1);
+	}
+
+	// initialise an array to contain the final pixel cluster identities
+	cv::Mat pixelLabelsFinal = cv::Mat::zeros (1, imageThread.cols, CV_32FC1);
+	// find the lowest delta_rgbij out of the k groups and label the pixel as
+    // belonging to the k value with the lowest delta rgb value
+    double minVal, maxVal;
+    int pL;
+    cv::Point minIdx, maxIdx;
+    for (int i=0; i<imageThread.cols; i++) {
+    	cv::minMaxLoc (imagePixelVectors, &minVal, &maxVal, &minIdx, &maxIdx);
+    	pixelLabelsFinal.row(0).col(i) = pixelLabels.row(minIdx.y).col(i);
+    	pL = pixelLabelsFinal.at<int>(0,i);
+    	// increment the total number of pixels in the cluster by one
+    	k_tots[pL-1]++;
+    	// add the actual pixel intensity to the cluster dictionary item
+    	k_sums[pL-1] += imagePixelVectors.col(i);
+    }
+
+	// calculate the new average pixel intensity vector and return it
+	for (int i=0; i<i_vec.cols; i++) {
+		for (int c; c<i_vec.rows; c++) {
+			i_vec.col(i) = k_sums[i] / k_tots[i];
+		}
+	}
+
+	// get the output image
+	cv::Mat bgrOut = cv::Mat::zeros (3, imageThread.cols, CV_64FC1);
+	for (int i=0; i<imageThread.cols; i++) {
+		pL = pixelLabelsFinal.at<int>(0,i);
+		bgrOut.col(i) = i_vec.col(pL-1);
+	}
+
+	// get the output image
+	cv::Mat imageChannels[3];
+	imageChannels[0] = bgrOut.row(0); // blue
+	imageChannels[1] = bgrOut.row(1); // green
+	imageChannels[2] = bgrOut.row(2); // red
+
+	cv::Mat imageOut;
+	cv::merge (imageChannels, 3, imageOut);
+	imageOut = imageOut.reshape(3, ColorImg.rows);
+	imageOut.convertTo(imageOut, CV_8UC3);
+
+	return imageOut;
+}
 

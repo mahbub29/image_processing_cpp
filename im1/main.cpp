@@ -35,26 +35,7 @@ int main()
 
     // cv::Mat out = kernel_.outline();
     
-    imp_.kmeansSegmentation (); //******************
-
-    // std::vector< std::vector<int> > foo;
-
-    // for (int i=0; i<3; i++) {
-    //     std::vector<int> fee;
-    //     fee.push_back(i);
-    //     fee.push_back(i);
-    //     foo.push_back(fee);
-    // }
-
-    // std::cout << "size " << foo.size() << "\n";
-
-    // for (int i=0; i<foo.size(); i++) {
-    //     std::cout << foo[i][0] << " " << foo[i][1] << "\n";
-    // }
-
-    // std::cout << &foo << "\n";
-
-
+    // imp_.kmeansSegmentation (); //******************
 
     // cv::imshow("Original Image", img);
     // cv::imshow("Processed Gray Image", out);
@@ -63,4 +44,4 @@ int main()
     // cv::destroyAllWindows();
 
     return 0;
-}   
+}

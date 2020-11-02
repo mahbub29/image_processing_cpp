@@ -41,5 +41,8 @@ class imageProcess
 		static void
 		leftMouseClick (int event, int i, int j, int flags, void *params);
 
+		std::vector<cv::Mat>
+		kmeansColor_nD_segmentation (cv::Mat i_vec, int ndims);
+
 };
 #endif
