@@ -193,6 +193,9 @@ cv::Mat get::get_nD_intensities
 			intensities.row(0).col(n) = IMG.row(i).col(j);	
 		}
 	} else {
+		// convert from uint8 to float64
+		IMG.convertTo(IMG, CV_64FC3);
+
 		// For color		
 		// split color image channels
 		cv::Mat bgr[3];
@@ -205,9 +208,9 @@ cv::Mat get::get_nD_intensities
 			i = selection[n][0];
 			j = selection[n][1];
 
-			intensities.row(0).col(n) = blue.row(i).col(j);
-			intensities.row(1).col(n) = green.row(i).col(j);
-			intensities.row(2).col(n) = red.row(i).col(j);
+			intensities.row(0).col(n) = blue.at<double>(i,j);
+			intensities.row(1).col(n) = green.at<double>(i,j);
+			intensities.row(2).col(n) = red.at<double>(i,j);
 
 			// if 5D add the row and column as the 4th and 5th dimensions respectively
 			if (ndims==5) {
@@ -216,7 +219,6 @@ cv::Mat get::get_nD_intensities
 			}
 		}
 	}
-
 
 	return intensities;
 }

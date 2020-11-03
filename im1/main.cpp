@@ -8,7 +8,7 @@
 int main()
 {   
     std::string filePath = "/home/mahbub/ImageProcessing/im1/sample_image_t1.jpg";
-    cv::Mat img = cv::imread(filePath, cv::IMREAD_COLOR);
+    cv::Mat img = cv::imread(filePath, cv::IMREAD_GRAYSCALE);
 
     get get_;
     imageProcess imp_ (filePath);
@@ -29,19 +29,32 @@ int main()
     //     }
     // }
 
+    // img.convertTo(img, CV_64FC1);
+    // std::cout << img << "\n";
+    // cv::Mat t = cv::Mat::zeros(img.size(), CV_64FC1);
+    // for (int i=0; i<t.cols; i++) {
+    //     // std::cout << img.col(0) << "\n";
+    //     img.col(0).copyTo(t.col(i));
+    // }
+    // std::cout << t << "\n";
+    // std::cout << img - t << "\n";
+    // // cv::Mat outGray = imp_.adaptiveFilterGray (windowSize);
+    // // cv::Mat outColor = imp_.adaptiveFilterColor (windowSize);
 
-    // cv::Mat outGray = imp_.adaptiveFilterGray (windowSize);
-    // cv::Mat outColor = imp_.adaptiveFilterColor (windowSize);
-
-    // cv::Mat out = kernel_.outline();
+    // // cv::Mat out = kernel_.outline();
     
-    // imp_.kmeansSegmentation (); //******************
-
+    imp_.kmeansSegmentation (); //******************
+    // cv::Mat y = img-t;
+    // std::cout << y << "\n";
+    // y.convertTo(y, CV_8UC1);
+    // // img.convertTo(img, CV_8UC1);
     // cv::imshow("Original Image", img);
-    // cv::imshow("Processed Gray Image", out);
-    // // imshow("Processed Color Image", outColor);
+    // // cv::imshow("Processed Gray Image", out);
+    // // // imshow("Processed Color Image", outColor);
     // cv::waitKey(0); // Wait for a keystroke in the window
     // cv::destroyAllWindows();
+
+
 
     return 0;
 }
