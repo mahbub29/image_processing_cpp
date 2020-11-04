@@ -278,9 +278,7 @@ void imageProcess::kmeansSegmentation ()
 
 				// conduct segmentation
 				std::cout << "Starting segmentation...\n";
-				std::vector<cv::Mat> iVec_n_imageOut = this->kmeansColor_nD_segmentation (i_vec, ndim);
-				cv::Mat i_vec = iVec_n_imageOut[0];
-				cv::Mat imageOut = iVec_n_imageOut[1];
+				cv::Mat imageOut = this->kmeansConvergence (i_vec, ndim);
 
 				cv::imshow("out", imageOut);
 				cv::waitKey(0);
@@ -433,5 +431,43 @@ std::vector<cv::Mat> imageProcess::kmeansColor_nD_segmentation (cv::Mat i_vec, i
 	// create an array of matrices to store the new intensity vector and the output image
 	std::vector<cv::Mat> iVec_n_imageOut = {i_vec, imageOut};
 
+	std::cout << imageOut << "\n";
+
 	return iVec_n_imageOut;
+}
+
+
+cv::Mat imageProcess::kmeansConvergence (cv::Mat init_i_vec, int ndim)
+{
+	// set arbitray initial previous intensity vector to compare to
+	cv::Mat prev_iVec = cv::Mat::ones (init_i_vec.size(), CV_64FC1)*1000;
+	cv::Mat curr_iVec = init_i_vec;
+
+	std::vector<cv::Mat> iVec_n_imageOut;
+	cv::Mat imageOut;
+	double SUMcurr, SUMprev;
+	SUMcurr = cv::sum(curr_iVec)[0];
+	SUMprev = cv::sum(prev_iVec)[1];
+
+	if (ndim>2) {
+		while (SUMcurr != SUMprev) {
+			prev_iVec = curr_iVec;
+			iVec_n_imageOut = this->kmeansColor_nD_segmentation (curr_iVec, ndim);
+			curr_iVec = iVec_n_imageOut[0];
+			imageOut = iVec_n_imageOut[1];
+			SUMcurr = cv::sum(curr_iVec)[0];
+			SUMprev = cv::sum(prev_iVec)[0];
+		}
+
+		for (int i=0; i<curr_iVec.cols; i++) {
+		std::cout << "Color " << i+1 << " = R:" << round(curr_iVec.at<double>(2,i))
+									   << " G:" << round(curr_iVec.at<double>(1,i))
+									   << " B:" << round(curr_iVec.at<double>(0,i)) << "\n";
+		}
+
+	} else {}
+
+	std::cout << "Finished\n";
+
+	return imageOut;
 }

@@ -41,7 +41,7 @@ int main()
     // // cv::Mat outGray = imp_.adaptiveFilterGray (windowSize);
     // // cv::Mat outColor = imp_.adaptiveFilterColor (windowSize);
 
-    // // cv::Mat out = kernel_.outline();
+    // cv::Mat out = kernel_.outline();
     
     imp_.kmeansSegmentation (); //******************
     // cv::Mat y = img-t;
@@ -53,8 +53,6 @@ int main()
     // // // imshow("Processed Color Image", outColor);
     // cv::waitKey(0); // Wait for a keystroke in the window
     // cv::destroyAllWindows();
-
-
 
     return 0;
 }
