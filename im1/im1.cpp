@@ -220,7 +220,7 @@ void imageProcess::kmeansSegmentation ()
 	cv::namedWindow ("Select Pixels", cv::WINDOW_NORMAL);
 	cv::Mat xyz;
 	cv::setMouseCallback ("Select Pixels", this->leftMouseClick, &xyz);
-	cv::imshow ("Select Pixels", ColorImg);
+	cv::imshow ("Select Pixels", IMG);
 
 	std::cout << "Select a minimum of 2 points.\n"
 				 "Press R to reset and clear your selection.\n"
@@ -231,7 +231,6 @@ void imageProcess::kmeansSegmentation ()
 	while (1) {
 		key1 = cv::waitKey(1);
 
-		
 		if (key1=='q') {
 			cv::destroyAllWindows();
 			break;
@@ -253,38 +252,51 @@ void imageProcess::kmeansSegmentation ()
 		} else if (key1=='y' && LEFT_CLICKS.size()>1) {
 
 			cv::Mat i_vec; // Matrix of intensity vectors
+			int ndims;
 
 			std::cout << "Running k-Means Segmentation..." << "\n";
 			if (IMG.channels() == 1) {
 				// retrieve Grayscale intensities
-				i_vec = get::get_nD_intensities (GrayImg, LEFT_CLICKS, 1);
+				i_vec = get::get_nD_intensities (IMG, LEFT_CLICKS, 1);
+				bool selectingDim = true;
+				while (selectingDim) {
+					std::cout << "Enter 1 for GRAY (1D) k-Means, or enter 3 for GRAYij (GRAY-3D) k-Means: ";
+					std::cin >> ndims;
+					if (ndims==1 || ndims==3) {
+						selectingDim = false;
+					} else {
+						std::cout << "ERROR: That is not an option. Please enter either 1 or 3.\n";
+					}
+
+				}
 			}
 			else {
 				bool selectingDim = true;
-				int ndim;
 				while (selectingDim) {
-					std::cout << "Enter 3 for RGB k-Means, or enter 5 for RGBij k-Means: ";
-					std::cin >> ndim;
-					std::cout << ndim << "\n";
-					if (ndim==3 || ndim==5) {
+					std::cout << "Enter 3 for RGB (COLOR-3D) k-Means, or enter 5 (COLOR-5D) for RGBij k-Means: ";
+					std::cin >> ndims;
+					if (ndims==3 || ndims==5) {
 						selectingDim = false;
 					} else {
 						std::cout << "ERROR: That is not an option. Please enter either 3 or 5.\n";
 					}
 				}
-				// retrieve RGB or RGBij intensities
-				i_vec = get::get_nD_intensities (ColorImg, LEFT_CLICKS, ndim);
-				std::cout << i_vec << "\n"; // *****
-
-				// conduct segmentation
-				std::cout << "Starting segmentation...\n";
-				cv::Mat imageOut = this->kmeansConvergence (i_vec, ndim);
-
-				cv::imshow("out", imageOut);
-				cv::waitKey(0);
 			}
+
+			// retrieve RGB or RGBij intensities
+			i_vec = get::get_nD_intensities (IMG, LEFT_CLICKS, ndims);
+			std::cout << i_vec << "\n";
+
+			// conduct segmentation
+			std::cout << "Starting segmentation...\n";
+			cv::Mat imageOut = this->kmeansConvergence (IMG.channels(), i_vec, ndims);
+
+			cv::imshow("out", imageOut);
+			key1 = cv::waitKey(0);
 		}
 	}
+
+	return;
 }
 
 
@@ -302,142 +314,256 @@ void imageProcess::leftMouseClick (int event, int j, int i, int flags, void *par
 }
 
 
-std::vector<cv::Mat> imageProcess::kmeansColor_nD_segmentation (cv::Mat i_vec, int ndims)
+std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat i_vec, int ndims)
 {
-	// number of k values
-	int k_num = i_vec.cols;
+	std::vector<cv::Mat> iVec_n_imageOut;
 
-	// split image matrix to BGR channels
-	cv::Mat imageThread = ColorImg.clone().reshape(3, 1);
-	
-	cv::Mat bgrThread[ndims];
-	cv::split(imageThread, bgrThread);
+	if (channels == 3) // *** FOR COLOR ***
+	{
+		// number of k values
+		int k_num = i_vec.cols;
 
-	// convert image matrix to doubles
-	for (int i=0; i<3; i++) {
-        bgrThread[i].convertTo(bgrThread[i], CV_64FC1);
-    }
+		// split image matrix to BGR channels
+		cv::Mat imageThread = ColorImg.clone().reshape(3,1);
+		
+		cv::Mat bgrThread[ndims];
+		cv::split(imageThread, bgrThread);
 
-    // add i and j dimensions if ndims requested is 5D
-    if (ndims==5) {
-    	bgrThread[3] = cv::Mat::zeros(bgrThread[0].size(), CV_64FC1);
-    	bgrThread[4] = cv::Mat::zeros(bgrThread[0].size(), CV_64FC1);
-    	int count = 0;
-    	for (int i=0; i<ColorImg.rows; i++) {
-	        for (int j=0; j<ColorImg.cols; j++) {
-	            bgrThread[3].at<double>(0,count) = i;
-	            bgrThread[4].at<double>(0,count) = j;
-	            count++;
-	        }
+		// convert image matrix to doubles
+		for (int i=0; i<3; i++) {
+	        bgrThread[i].convertTo(bgrThread[i], CV_64FC1);
 	    }
-    }
 
-    cv::Mat imagePixelVectors;
-    std::vector<cv::Mat> m;
-    if (ndims==5) {
-    	m = {bgrThread[0], // B displacement
-    		 bgrThread[1], // G displacement
-    		 bgrThread[2], // R displacement
-    		 bgrThread[3], // i displacement
-    		 bgrThread[4]};// j displacement
-    } else {
-    	m = {bgrThread[0], // B displacement
-    		 bgrThread[1], // G displacement
-    		 bgrThread[2]};// R displacement
-    }
-    cv::vconcat(m, imagePixelVectors);
+	    // add i and j dimensions if ndims requested is 5D
+	    if (ndims==5) {
+	    	bgrThread[3] = cv::Mat::zeros(bgrThread[0].size(), CV_64FC1);
+	    	bgrThread[4] = cv::Mat::zeros(bgrThread[0].size(), CV_64FC1);
+	    	int count = 0;
+	    	for (int i=0; i<ColorImg.rows; i++) {
+		        for (int j=0; j<ColorImg.cols; j++) {
+		            bgrThread[3].at<double>(0,count) = i;
+		            bgrThread[4].at<double>(0,count) = j;
+		            count++;
+		        }
+		    }
+	    }
 
-    // Make vectors to store the cluster sums as well as the total nymber
-	// belonging to each cluster 
-	std::vector< cv::Mat_<double> > k_sums(k_num);
-	std::vector<int> k_tots(k_num);
+	    cv::Mat imagePixelVectors;
+	    std::vector<cv::Mat> m;
+	    if (ndims==5) {
+	    	m = {bgrThread[0], // B displacement
+	    		 bgrThread[1], // G displacement
+	    		 bgrThread[2], // R displacement
+	    		 bgrThread[3], // i displacement
+	    		 bgrThread[4]};// j displacement
+	    } else {
+	    	m = {bgrThread[0], // B displacement
+	    		 bgrThread[1], // G displacement
+	    		 bgrThread[2]};// R displacement
+	    }
+	    cv::vconcat(m, imagePixelVectors);
 
-	// Matrix to store the difference between each image pixel and the currently
-	// calculated k-means values
-	cv::Mat_<double> delta = cv::Mat::zeros (k_num, imageThread.cols, CV_64FC1);
+	    // Make vectors to store the cluster sums as well as the total nymber
+		// belonging to each cluster 
+		std::vector< cv::Mat_<double> > k_sums(k_num);
+		std::vector<int> k_tots(k_num);
 
-	// calculate the root square distance (in terms of RGBij) each pixel in the image
-   	// to each of the selected pixel RGB values
-   	// i.e. d = sqrt(r^2 + g^2 + b^2 + i^2 + j^2)
-    // assign a k cluster number to each set of RGB differences
+		// Matrix to store the difference between each image pixel and the currently
+		// calculated k-means values
+		cv::Mat_<double> delta = cv::Mat::zeros (k_num, imageThread.cols, CV_64FC1);
 
-	cv::Mat sqrDiff; // matrix to save the squared differeneces
-	cv::Mat pixelLabels = cv::Mat::ones(k_num, imageThread.cols, CV_32FC1); // array containing the k number of labels
+		// calculate the root square distance (in terms of RGBij) each pixel in the image
+	   	// to each of the selected pixel RGB values
+	   	// i.e. d = sqrt(r^2 + g^2 + b^2 + i^2 + j^2)
+	    // assign a k cluster number to each set of RGB differences
 
-	for (int i=0; i<k_num; i++) {
-		if (ndims==5) {
-			k_sums[i] = cv::Mat::zeros (5,1,CV_64FC1);
-		} else {
-			k_sums[i] = cv::Mat::zeros (3,1,CV_64FC1);
+		cv::Mat sqrDiff; // matrix to save the squared differeneces
+		cv::Mat pixelLabels = cv::Mat::ones(k_num, imageThread.cols, CV_32FC1); // array containing the k number of labels
+
+		for (int i=0; i<k_num; i++) {
+			if (ndims==5) {
+				k_sums[i] = cv::Mat::zeros (5,1,CV_64FC1);
+			} else {
+				k_sums[i] = cv::Mat::zeros (3,1,CV_64FC1);
+			}
+			k_tots[i] = 0;
+
+			cv::Mat I = cv::Mat::zeros(imagePixelVectors.size(), CV_64FC1); 
+			for (int n=0; n<imagePixelVectors.cols; n++) {
+				i_vec.col(i).copyTo(I.col(n));
+			}
+
+			cv::pow((imagePixelVectors-I), 2, sqrDiff); // calculate squared differences
+			cv::reduce(sqrDiff, delta.row(i), 0, cv::REDUCE_SUM, CV_64FC1); // sum the squared differnces
+			cv::sqrt(delta.row(i), delta.row(i)); // square-root of the sum
+			pixelLabels.row(i) = pixelLabels.row(i)*(i+1); // initialise a set of labels for each row of delta
+														   // to use to identify the lowest value in each column later
 		}
-		k_tots[i] = 0;
 
-		cv::Mat I = cv::Mat::zeros(imagePixelVectors.size(), CV_64FC1); 
-		for (int n=0; n<imagePixelVectors.cols; n++) {
-			i_vec.col(i).copyTo(I.col(n));
+		// initialise an array to contain the final pixel cluster identities
+		cv::Mat pixelLabelsFinal = cv::Mat::zeros (1, imageThread.cols, CV_32F);
+		// find the lowest delta_rgbij out of the k groups and label the pixel as
+	    // belonging to the k value with the lowest delta rgb value
+	    double minVal, maxVal;
+	    cv::Point2i minIdx, maxIdx;
+	    int IDX;
+	    for (int i=0; i<delta.cols; i++) {
+	    	cv::minMaxLoc (delta.col(i), &minVal, &maxVal, &minIdx, &maxIdx);
+	    	IDX = minIdx.y;
+	    	pixelLabelsFinal.at<int>(0,i) = IDX;
+
+	    	// increment the total number of pixels in the cluster by one
+	    	k_tots[IDX]++;
+
+	    	// add the actual pixel intensity to the cluster dictionary item
+	    	k_sums[IDX] += imagePixelVectors.col(i);
+	    }
+
+		// calculate the new average pixel intensity vector
+		for (int i=0; i<i_vec.cols; i++) {
+			i_vec.col(i) = k_sums[i] / k_tots[i];
 		}
 
-		cv::pow((imagePixelVectors-I), 2, sqrDiff); // calculate squared differences
-		cv::reduce(sqrDiff, delta.row(i), 0, cv::REDUCE_SUM, CV_64FC1); // sum the squared differnces
-		cv::sqrt(delta.row(i), delta.row(i)); // square-root of the sum
-		pixelLabels.row(i) = pixelLabels.row(i)*(i+1); // initialise a set of labels for each row of delta
-													   // to use to identify the lowest value in each column later
+		// get the output image
+		int pL;
+		int count = 0;
+		cv::Mat bgrOut = cv::Mat::zeros (3, imageThread.cols, CV_64FC1);
+		for (int i=0; i<imageThread.cols; i++) {
+			pL = pixelLabelsFinal.at<int>(0,i);
+			i_vec.col(pL).rowRange(0,3).copyTo(bgrOut.col(i));
+		}
+
+		// get the output image
+		cv::Mat imageChannels[3];
+		imageChannels[0] = bgrOut.row(0); // blue
+		imageChannels[1] = bgrOut.row(1); // green
+		imageChannels[2] = bgrOut.row(2); // red
+
+		cv::Mat imageOut;
+		cv::merge (imageChannels, 3, imageOut);
+		imageOut = imageOut.reshape(3, ColorImg.rows);
+		imageOut.convertTo(imageOut, CV_8UC3);
+
+		// create an array of matrices to store the new intensity vector and the output image
+		iVec_n_imageOut = {i_vec, imageOut};
 	}
 
-	// initialise an array to contain the final pixel cluster identities
-	cv::Mat pixelLabelsFinal = cv::Mat::zeros (1, imageThread.cols, CV_32F);
-	// find the lowest delta_rgbij out of the k groups and label the pixel as
-    // belonging to the k value with the lowest delta rgb value
-    double minVal, maxVal;
-    cv::Point2i minIdx, maxIdx;
-    int IDX;
-    for (int i=0; i<delta.cols; i++) {
-    	cv::minMaxLoc (delta.col(i), &minVal, &maxVal, &minIdx, &maxIdx);
-    	IDX = minIdx.y;
-    	pixelLabelsFinal.at<int>(0,i) = IDX;
+	//---------------------------------------------------------------------------------------------
 
-    	// increment the total number of pixels in the cluster by one
-    	k_tots[IDX]++;
+	else // *** FOR GRAYSCALE ***
+	{
+		// number of k values
+		int k_num = i_vec.cols;
 
-    	// add the actual pixel intensity to the cluster dictionary item
-    	k_sums[IDX] += imagePixelVectors.col(i);
-    }
+		// split image matrix to BGR channels
+		cv::Mat grayThread[ndims] = GrayImg.clone().reshape(1,1);
 
-	// calculate the new average pixel intensity vector
-	for (int i=0; i<i_vec.cols; i++) {
-		i_vec.col(i) = k_sums[i] / k_tots[i];
+		// convert image matrix to doubles
+	    grayThread[0].convertTo(grayThread[0], CV_64FC1);
+
+	    // add i and j dimensions if ndims requested is 3D
+	    if (ndims==3) {
+	    	grayThread[1] = cv::Mat::zeros(grayThread[0].size(), CV_64FC1);
+	    	grayThread[2] = cv::Mat::zeros(grayThread[0].size(), CV_64FC1);
+	    	int count = 0;
+	    	for (int i=0; i<GrayImg.rows; i++) {
+		        for (int j=0; j<GrayImg.cols; j++) {
+		            grayThread[1].at<double>(0,count) = i;
+		            grayThread[2].at<double>(0,count) = j;
+		            count++;
+		        }
+		    }
+	    }
+
+		cv::Mat imagePixelVectors;
+	    std::vector<cv::Mat> m;
+	    if (ndims==3) {
+	    	m = {grayThread[0], // GRAY displacement
+	    		 grayThread[1], // i displacement
+	    		 grayThread[2]};// j displacement
+	    } else {
+	    	m = {grayThread[0]};// GRAY displacement
+	    }
+	    cv::vconcat(m, imagePixelVectors);
+
+	    // Make vectors to store the cluster sums as well as the total nymber
+		// belonging to each cluster 
+		std::vector< cv::Mat_<double> > k_sums(k_num);
+		std::vector<int> k_tots(k_num);
+
+		// Matrix to store the difference between each image pixel and the currently
+		// calculated k-means values
+		cv::Mat_<double> delta = cv::Mat::zeros (k_num, grayThread[0].cols, CV_64FC1);
+	    
+		cv::Mat sqrDiff; // matrix to save the squared differeneces
+		cv::Mat pixelLabels = cv::Mat::ones(k_num, grayThread[0].cols, CV_32FC1); // array containing the k number of labels
+
+		for (int i=0; i<k_num; i++) {
+			if (ndims==3) {
+				k_sums[i] = cv::Mat::zeros (3,1,CV_64FC1);
+			} else {
+				k_sums[i] = cv::Mat::zeros (1,1,CV_64FC1);
+			}
+			k_tots[i] = 0;
+
+			cv::Mat I = cv::Mat::zeros(imagePixelVectors.size(), CV_64FC1); 
+			for (int n=0; n<imagePixelVectors.cols; n++) {
+				i_vec.col(i).copyTo(I.col(n));
+			}
+
+			cv::pow((imagePixelVectors-I), 2, sqrDiff); // calculate squared differences
+			cv::reduce(sqrDiff, delta.row(i), 0, cv::REDUCE_SUM, CV_64FC1); // sum the squared differnces
+			cv::sqrt(delta.row(i), delta.row(i)); // square-root of the sum
+			pixelLabels.row(i) = pixelLabels.row(i)*(i+1); // initialise a set of labels for each row of delta
+														   // to use to identify the lowest value in each column later
+		}
+
+		// initialise an array to contain the final pixel cluster identities
+		cv::Mat pixelLabelsFinal = cv::Mat::zeros (1, grayThread[0].cols, CV_32F);
+		// find the lowest delta_rgbij out of the k groups and label the pixel as
+	    // belonging to the k value with the lowest delta rgb value
+	    double minVal, maxVal;
+	    cv::Point2i minIdx, maxIdx;
+	    int IDX;
+	    for (int i=0; i<delta.cols; i++) {
+	    	cv::minMaxLoc (delta.col(i), &minVal, &maxVal, &minIdx, &maxIdx);
+	    	IDX = minIdx.y;
+	    	pixelLabelsFinal.at<int>(0,i) = IDX;
+
+	    	// increment the total number of pixels in the cluster by one
+	    	k_tots[IDX]++;
+
+	    	// add the actual pixel intensity to the cluster dictionary item
+	    	k_sums[IDX] += imagePixelVectors.col(i);
+	    }
+
+	    // calculate the new average pixel intensity vector
+		for (int i=0; i<i_vec.cols; i++) {
+			i_vec.col(i) = k_sums[i] / k_tots[i];
+		}
+
+		// get the output image
+		int pL;
+		int count = 0;
+		cv::Mat grayOut = cv::Mat::zeros (1, grayThread[0].cols, CV_64FC1);
+		for (int i=0; i<grayThread[0].cols; i++) {
+			pL = pixelLabelsFinal.at<int>(0,i);
+			i_vec.col(pL).rowRange(0,1).copyTo(grayOut.col(i));
+		}
+
+		cv::Mat imageOut;
+		grayOut = grayOut.reshape(1, GrayImg.rows);
+		grayOut.convertTo(imageOut, CV_8UC1);
+
+		// create an array of matrices to store the new intensity vector and the output image
+		iVec_n_imageOut = {i_vec, imageOut};
 	}
-
-	// get the output image
-	int pL;
-	int count = 0;
-	cv::Mat bgrOut = cv::Mat::zeros (3, imageThread.cols, CV_64FC1);
-	for (int i=0; i<imageThread.cols; i++) {
-		pL = pixelLabelsFinal.at<int>(0,i);
-		i_vec.col(pL).rowRange(0,3).copyTo(bgrOut.col(i));
-	}
-
-	// get the output image
-	cv::Mat imageChannels[3];
-	imageChannels[0] = bgrOut.row(0); // blue
-	imageChannels[1] = bgrOut.row(1); // green
-	imageChannels[2] = bgrOut.row(2); // red
-
-	cv::Mat imageOut;
-	cv::merge (imageChannels, 3, imageOut);
-	imageOut = imageOut.reshape(3, ColorImg.rows);
-	imageOut.convertTo(imageOut, CV_8UC3);
-
-	// create an array of matrices to store the new intensity vector and the output image
-	std::vector<cv::Mat> iVec_n_imageOut = {i_vec, imageOut};
-
-	std::cout << imageOut << "\n";
 
 	return iVec_n_imageOut;
 }
 
 
-cv::Mat imageProcess::kmeansConvergence (cv::Mat init_i_vec, int ndim)
+cv::Mat imageProcess::kmeansConvergence (int channels, cv::Mat init_i_vec, int ndims)
 {
 	// set arbitray initial previous intensity vector to compare to
 	cv::Mat prev_iVec = cv::Mat::ones (init_i_vec.size(), CV_64FC1)*1000;
@@ -447,27 +573,30 @@ cv::Mat imageProcess::kmeansConvergence (cv::Mat init_i_vec, int ndim)
 	cv::Mat imageOut;
 	double SUMcurr, SUMprev;
 	SUMcurr = cv::sum(curr_iVec)[0];
-	SUMprev = cv::sum(prev_iVec)[1];
+	SUMprev = cv::sum(prev_iVec)[0];
 
-	if (ndim>2) {
-		while (SUMcurr != SUMprev) {
-			prev_iVec = curr_iVec;
-			iVec_n_imageOut = this->kmeansColor_nD_segmentation (curr_iVec, ndim);
-			curr_iVec = iVec_n_imageOut[0];
-			imageOut = iVec_n_imageOut[1];
-			SUMcurr = cv::sum(curr_iVec)[0];
-			SUMprev = cv::sum(prev_iVec)[0];
-		}
+	while (SUMcurr != SUMprev) {
+		prev_iVec = curr_iVec;
+		iVec_n_imageOut = this->kmeans_nD_segmentation (channels, curr_iVec, ndims);
+		curr_iVec = iVec_n_imageOut[0];
+		imageOut = iVec_n_imageOut[1];
+		SUMcurr = cv::sum(curr_iVec)[0];
+		SUMprev = cv::sum(prev_iVec)[0];
+	}
 
+	if (channels == 3) {
 		for (int i=0; i<curr_iVec.cols; i++) {
-		std::cout << "Color " << i+1 << " = R:" << round(curr_iVec.at<double>(2,i))
-									   << " G:" << round(curr_iVec.at<double>(1,i))
-									   << " B:" << round(curr_iVec.at<double>(0,i)) << "\n";
+			std::cout << "Color " << i+1 << " = R:" << round(curr_iVec.at<double>(2,i))
+										   << " G:" << round(curr_iVec.at<double>(1,i))
+										   << " B:" << round(curr_iVec.at<double>(0,i)) << "\n";
 		}
+	} else {
+		for (int i=0; i<curr_iVec.cols; i++) {
+			std::cout << "Grayscale intensity: " << i+1 << " = " << round(curr_iVec.at<double>(0,i)) << "\n";
+		}
+	}
 
-	} else {}
-
-	std::cout << "Finished\n";
+	std::cout << "FINISHED\nClick on the image window and press Q twice to quit.";
 
 	return imageOut;
 }

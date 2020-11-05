@@ -29,7 +29,7 @@ class imageProcess
 		kmeansSegmentation ();
 
 		std::vector<cv::Mat>
-		kmeansColor_nD_segmentation (cv::Mat i_vec, int ndims);
+		kmeans_nD_segmentation (int channels, cv::Mat i_vec, int ndims);
 
 	private:
 		int
@@ -45,7 +45,7 @@ class imageProcess
 		leftMouseClick (int event, int i, int j, int flags, void *params);
 
 		cv::Mat
-		kmeansConvergence (cv::Mat i_vec, int ndim);
+		kmeansConvergence (int channels, cv::Mat i_vec, int ndims);
 
 };
 #endif

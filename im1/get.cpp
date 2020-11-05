@@ -184,13 +184,21 @@ cv::Mat get::get_nD_intensities
 	// for 3D columns are B, G, R
 	// for 5D columns are B, G, R, i, j
 
-	if (ndims == 1) {
+	if (IMG.channels()==1) {
+		IMG.convertTo(IMG, CV_64FC1);
+
 		// For grayscale
 		for (int n=0; n<selection.size(); n++) {
 			i = selection[n][0];
 			j = selection[n][1];
 			
-			intensities.row(0).col(n) = IMG.row(i).col(j);	
+			intensities.row(0).col(n) = IMG.at<double>(i,j);
+
+			// if 5D add the row and column as the 4th and 5th dimensions respectively
+			if (ndims==3) {
+				intensities.row(1).col(n) = i;
+				intensities.row(2).col(n) = j;
+			}	
 		}
 	} else {
 		// convert from uint8 to float64
