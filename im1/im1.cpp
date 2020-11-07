@@ -42,20 +42,20 @@ cv::Mat imageProcess::medianFilter (cv::Mat image, int windowSize)
 		double last_progress = 1000;
 		int total = image.rows*image.cols;
 
+		std::cout << "Applying Median Filter to channel...\n";
+
 		for (int i=0; i<height; i++) {
 			for (int j=0; j<width; j++) {
 				window = get::getWindow(image, windowSize, i, j);
 				imageOut.row(i).col(j) = this->getMedian(window);
+				
 				count++;
-				progress = floor(count/56852*100);
-				if (progress != last_progress){
-					if (std::fmod(progress,5)==0) {
-						std::cout << progress << "%" << "\n";
-						last_progress = progress;
-					}
-				}
+				progress = floor(count/total*100);
+				std::cout << "\r" << progress << "%" << std::flush;
+				last_progress = progress;
 			}
 		}
+		std::cout << " - DONE\n";
 
 		imageOut.convertTo(imageOut, CV_8UC1);
 		return imageOut;
@@ -84,6 +84,9 @@ cv::Mat imageProcess::adaptiveFilter(cv::Mat image, int windowSize)
 	double progress;
 	double last_progress = 1000;
 	int total = image.rows*image.cols;
+	std::string dots = "";
+
+	std::cout << "Appying Adaptive Filter to channel\n";
 
 	for (int i=0; i<height; i++) {
 		for (int j=0; j<width; j++) {
@@ -98,15 +101,15 @@ cv::Mat imageProcess::adaptiveFilter(cv::Mat image, int windowSize)
 			imageOut.row(i).col(j) = round(m + (v-lv)/v * (p-m));
 
 			count++;
-			progress = floor(count/56852*100);
+			progress = floor(count/total*100);
 			if (progress != last_progress){
-				if (std::fmod(progress,5)==0) {
-					std::cout << progress << "%" << "\n";
-					last_progress = progress;
-				}
+				if (std::fmod(progress,5)==0) {dots += ".";}
+				std::cout << "\r" << progress << "%" << dots << std::flush;
+				last_progress = progress;
 			}
 		}
 	}
+	std::cout << "DONE\n";
 
 	imageOut.convertTo(imageOut, CV_8UC1);
 
@@ -192,32 +195,41 @@ cv::Mat imageProcess::adaptiveFilterColor (int windowSize)
 }
 
 
-void imageProcess::kmeansSegmentation ()
+void imageProcess::kmeansSegmentation (int selection)
 {	
-	std::cout << "Press 1 for Grayscale Segmentation.\n"
+	cv::Mat IMG;
+
+	if (selection == 0) {
+		std::cout << "Press 1 for Grayscale Segmentation.\n"
 				 "Press 2 for Color Segmentation.\n";
 
-	cv::Mat IMG;
-	bool keepAsking = true;
-	while (keepAsking) {
-		char option;
-		std::cin >> option;
+		bool keepAsking = true;
+		
+		while (keepAsking) {
+			char option;
+			std::cin >> option;
 
-		if (option=='1') {
-			IMG=GrayImg;
-			keepAsking = false;
+			if (option=='1') {
+				IMG=GrayImg;
+				keepAsking = false;
+			}
+			else if (option=='2') {
+				IMG=ColorImg;
+				keepAsking = false;
+			}
+			else {
+				std::cout << "ERROR: That is not an option. Please press 1 for Grayscale "
+							 "Segmentation or 2 for Color Segmentation.\n";
+			}
 		}
-		else if (option=='2') {
-			IMG=ColorImg;
-			keepAsking = false;
-		}
-		else {
-			std::cout << "ERROR: That is not an option. Please press 1 for Grayscale "
-						 "Segmentation or 2 for Color Segmentation.\n";
-		}
-	}
+	} else if (selection == 1) {
+		IMG = GrayImg;
+	} else if (selection == 2) {
+		IMG = ColorImg;
+	}	
 
 	cv::namedWindow ("Select Pixels", cv::WINDOW_NORMAL);
+	cv::resizeWindow ("Select Pixels", 640, 480);
 	cv::Mat xyz;
 	cv::setMouseCallback ("Select Pixels", this->leftMouseClick, &xyz);
 	cv::imshow ("Select Pixels", IMG);
@@ -245,7 +257,7 @@ void imageProcess::kmeansSegmentation ()
 				std::cout << "ERROR: Select at least 2 points, or press R to clear "
 				"the list or \"Q\" to quit." << "\n";
 			} else {
-				std::cout << "Your have selected " << LEFT_CLICKS.size() << " points. "
+				std::cout << "You have selected " << LEFT_CLICKS.size() << " points. "
 							 "Is this correct?\nPress Y to confirm, R to clear the list, "
 							 "or continue clicking to add to your selection." << "\n";
 			}
@@ -254,7 +266,7 @@ void imageProcess::kmeansSegmentation ()
 			cv::Mat i_vec; // Matrix of intensity vectors
 			int ndims;
 
-			std::cout << "Running k-Means Segmentation..." << "\n";
+			std::cout << "Starting k-Means Segmentation..." << "\n";
 			if (IMG.channels() == 1) {
 				// retrieve Grayscale intensities
 				i_vec = get::get_nD_intensities (IMG, LEFT_CLICKS, 1);
@@ -288,11 +300,15 @@ void imageProcess::kmeansSegmentation ()
 			std::cout << i_vec << "\n";
 
 			// conduct segmentation
-			std::cout << "Starting segmentation...\n";
+			std::cout << "Counducting segmentation...\n";
 			cv::Mat imageOut = this->kmeansConvergence (IMG.channels(), i_vec, ndims);
 
-			cv::imshow("out", imageOut);
+			cv::namedWindow("Output", cv::WINDOW_NORMAL);
+			cv::resizeWindow("Output", 640, 480);
+			cv::imshow("Output", imageOut);
 			key1 = cv::waitKey(0);
+			cv::destroyAllWindows();
+			break;
 		}
 	}
 
@@ -380,6 +396,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 		cv::Mat sqrDiff; // matrix to save the squared differeneces
 		cv::Mat pixelLabels = cv::Mat::ones(k_num, imageThread.cols, CV_32FC1); // array containing the k number of labels
 
+		std::cout << "Calculating vector distances...";
 		for (int i=0; i<k_num; i++) {
 			if (ndims==5) {
 				k_sums[i] = cv::Mat::zeros (5,1,CV_64FC1);
@@ -399,7 +416,9 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 			pixelLabels.row(i) = pixelLabels.row(i)*(i+1); // initialise a set of labels for each row of delta
 														   // to use to identify the lowest value in each column later
 		}
+		std::cout << "DONE\n";
 
+		std::cout << "Labelling Pixels...";
 		// initialise an array to contain the final pixel cluster identities
 		cv::Mat pixelLabelsFinal = cv::Mat::zeros (1, imageThread.cols, CV_32F);
 		// find the lowest delta_rgbij out of the k groups and label the pixel as
@@ -418,6 +437,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 	    	// add the actual pixel intensity to the cluster dictionary item
 	    	k_sums[IDX] += imagePixelVectors.col(i);
 	    }
+	    std::cout << "DONE\n";
 
 		// calculate the new average pixel intensity vector
 		for (int i=0; i<i_vec.cols; i++) {
@@ -425,6 +445,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 		}
 
 		// get the output image
+		std::cout << "Making output image...";
 		int pL;
 		int count = 0;
 		cv::Mat bgrOut = cv::Mat::zeros (3, imageThread.cols, CV_64FC1);
@@ -498,6 +519,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 		cv::Mat sqrDiff; // matrix to save the squared differeneces
 		cv::Mat pixelLabels = cv::Mat::ones(k_num, grayThread[0].cols, CV_32FC1); // array containing the k number of labels
 
+		std::cout << "Calculating vector distances...";
 		for (int i=0; i<k_num; i++) {
 			if (ndims==3) {
 				k_sums[i] = cv::Mat::zeros (3,1,CV_64FC1);
@@ -517,7 +539,9 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 			pixelLabels.row(i) = pixelLabels.row(i)*(i+1); // initialise a set of labels for each row of delta
 														   // to use to identify the lowest value in each column later
 		}
+		std::cout << "DONE\n";
 
+		std::cout << "Labelling Pixels...";
 		// initialise an array to contain the final pixel cluster identities
 		cv::Mat pixelLabelsFinal = cv::Mat::zeros (1, grayThread[0].cols, CV_32F);
 		// find the lowest delta_rgbij out of the k groups and label the pixel as
@@ -536,6 +560,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 	    	// add the actual pixel intensity to the cluster dictionary item
 	    	k_sums[IDX] += imagePixelVectors.col(i);
 	    }
+	    std::cout << "DONE\n";
 
 	    // calculate the new average pixel intensity vector
 		for (int i=0; i<i_vec.cols; i++) {
@@ -543,6 +568,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 		}
 
 		// get the output image
+		std::cout << "Making output image...";
 		int pL;
 		int count = 0;
 		cv::Mat grayOut = cv::Mat::zeros (1, grayThread[0].cols, CV_64FC1);
@@ -558,6 +584,8 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 		// create an array of matrices to store the new intensity vector and the output image
 		iVec_n_imageOut = {i_vec, imageOut};
 	}
+
+	std::cout << "DONE\n";
 
 	return iVec_n_imageOut;
 }
@@ -596,7 +624,8 @@ cv::Mat imageProcess::kmeansConvergence (int channels, cv::Mat init_i_vec, int n
 		}
 	}
 
-	std::cout << "FINISHED\nClick on the image window and press Q twice to quit.";
+	std::cout << "FINISHED\n"
+				 "Click console and press Ctrl+C to quit.\n";
 
 	return imageOut;
 }

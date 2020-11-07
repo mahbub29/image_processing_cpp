@@ -7,52 +7,151 @@
 
 int main()
 {   
-    std::string filePath = "/home/mahbub/ImageProcessing/im1/sample_image_t1.jpg";
-    cv::Mat img = cv::imread(filePath, cv::IMREAD_GRAYSCALE);
+    // std::string filePath = "/home/mahbub/ImageProcessing/im1/sample_image_t1.jpg";
+    std::string filePath = "/home/mahbub/Downloads/http___cdn.cnn.com_cnnnext_dam_assets_181010131059-australia-best-beaches-cossies-beach-cocos3.jpg";
 
     get get_;
     imageProcess imp_ (filePath);
     imageKernel kernel_ (filePath);
 
-    // int windowSize;
-    // bool noWindowChosen = true;
+    char grayOrColor;
+    bool noOptionSelected = true;
 
-    // while (noWindowChosen) {
-    //     std::cout << "Enter a window-size:" << " ";
-    //     std::cin >> windowSize;
+    std::cout << "Enter G for Grayscale or C for Color and press ENTER: ";
+    while (noOptionSelected) {
+        std::cin >> grayOrColor;
+        if (grayOrColor == 'g' || grayOrColor == 'G' || grayOrColor == 'c' || grayOrColor == 'C') {
+            noOptionSelected = false;
+        } else {
+            std::cout << "ERROR: That is not an option. Select G or C.\n";
+        }
+    }
 
-    //     if (windowSize%2!=1 || windowSize>img.rows || windowSize>img.cols) {
-    //         std::cout << "ERROR: Window-size must be odd INT, and must not be "
-    //                       "larger than the largest dimension of the selected image." << "\n";
-    //     } else {
-    //         noWindowChosen = false;
-    //     }
-    // }
 
-    // img.convertTo(img, CV_64FC1);
-    // std::cout << img << "\n";
-    // cv::Mat t = cv::Mat::zeros(img.size(), CV_64FC1);
-    // for (int i=0; i<t.cols; i++) {
-    //     // std::cout << img.col(0) << "\n";
-    //     img.col(0).copyTo(t.col(i));
-    // }
-    // std::cout << t << "\n";
-    // std::cout << img - t << "\n";
-    // // cv::Mat outGray = imp_.adaptiveFilterGray (windowSize);
-    // // cv::Mat outColor = imp_.adaptiveFilterColor (windowSize);
+    std::cout << "Enter the number of the process you would like to run and press ENTER.\n"
+                 "1. Apply Median Filter\n"
+                 "2. Apply Adaptive Filter\n"
+                 "3. Run k-Means Segmentation\n";
+    if (grayOrColor == 'g' || grayOrColor == 'G') {
+        std::cout << "4. Apply a kernel (options will be provided).\n";
+    }
 
-    // cv::Mat out = kernel_.outline();
-    
-    imp_.kmeansSegmentation (); //******************
-    // cv::Mat y = img-t;
-    // std::cout << y << "\n";
-    // y.convertTo(y, CV_8UC1);
-    // // img.convertTo(img, CV_8UC1);
-    // cv::imshow("Original Image", img);
-    // // cv::imshow("Processed Gray Image", out);
-    // // // imshow("Processed Color Image", outColor);
-    // cv::waitKey(0); // Wait for a keystroke in the window
-    // cv::destroyAllWindows();
+    int option, windowSize;
+    noOptionSelected = true;
+    cv::Mat out;
+
+    while (noOptionSelected) {
+        std::cin >> option;
+        if (grayOrColor == 'g' || grayOrColor == 'G') {
+            switch (option) {
+                case 1: {
+                    while (noOptionSelected) {
+                        std::cout << "Enter window size (must be odd INT): ";
+                        std::cin >> windowSize;
+                        if (windowSize%2 != 1) {
+                            std::cout << "ERROR: windowSize must be odd INT\n";
+                        } else {
+                            noOptionSelected = false;
+                        }
+                    }
+                    out = imp_.medianFilterGray (windowSize);
+                    break;
+                }
+                case 2: {
+                    while (noOptionSelected) {
+                        std::cout << "Enter window size (must be odd INT): ";
+                        std::cin >> windowSize;
+                        if (windowSize%2 != 1) {
+                            std::cout << "ERROR: windowSize must be odd INT\n";
+                        } else {
+                            noOptionSelected = false;
+                        }
+                    }
+                    out = imp_.adaptiveFilterGray (windowSize);
+                    break;
+                }
+                case 3: {
+                    imp_.kmeansSegmentation (1);
+                    break;
+                }
+                case 4: {
+                    std::cout << "Select which kernel to apply:\n"
+                                 "1. Sharpen\n"
+                                 "2. Blur\n"
+                                 "3. Emboss\n"
+                                 "4. Top Sobel\n"
+                                 "5. Bottom Sobel\n"
+                                 "6. Left Sobel\n"
+                                 "7. Right Sobel\n"
+                                 "8. Outline\n"
+                                 "9. Smooth\n"
+                                 "10.Custom Input Kernel\n";
+                    std::cout << "Option: ";
+                    int K;
+                    std::cin >> K;
+                    cv::Mat imageOut = kernel_.SelectAnOption(K);
+                    break;
+                }
+                default: {
+                    std::cout << "ERROR: "<< option << " is not an option.\n";
+                }
+            }
+        } else {
+            switch (option) {
+                case 1: {
+                    while (noOptionSelected) {
+                        std::cout << "Enter window size (must be odd INT): ";
+                        std::cin >> windowSize;
+                        if (windowSize%2 != 1) {
+                            std::cout << "ERROR: windowSize must be odd INT\n";
+                        } else {
+                            noOptionSelected = false;
+                        }
+                    }
+                    out = imp_.medianFilterRGB (windowSize);
+                    break;
+                }
+                case 2: {
+                    while (noOptionSelected) {
+                        std::cout << "Enter window size (must be odd INT): ";
+                        std::cin >> windowSize;
+                        if (windowSize%2 != 1) {
+                            std::cout << "ERROR: windowSize must be odd INT\n";
+                        } else {
+                            noOptionSelected = false;
+                        }
+                    }
+                    out = imp_.adaptiveFilterColor (windowSize);
+                    break;
+                }
+                case 3: {
+                    imp_.kmeansSegmentation (2);
+                    break;
+                }
+                default: {
+                    std::cout << "ERROR: "<< option << " is not an option.\n";
+                }
+            }
+        }
+    }
+
+    cv::Mat in;
+    if (grayOrColor == 'g' || grayOrColor == 'G') {
+        in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
+    } else {
+        in = cv::imread (filePath, cv::IMREAD_COLOR);
+    }
+ 
+    if (!out.empty()) {
+        cv::namedWindow("Original", cv::WINDOW_NORMAL);
+        cv::namedWindow("Output", cv::WINDOW_NORMAL);
+        cv::resizeWindow("Original",640,480);
+        cv::resizeWindow("Output",640,480);
+        cv::imshow ("Original", in);
+        cv::imshow ("Output", out);
+        cv::waitKey(0);
+        cv::destroyAllWindows();
+    }
 
     return 0;
 }

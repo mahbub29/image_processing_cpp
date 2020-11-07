@@ -43,6 +43,9 @@ class imageKernel
 		cv::Mat
 		customInput ();
 
+		cv::Mat
+		SelectAnOption (int option);
+
 	private:
 		cv::Mat
 		applyKernel(cv::Mat kernel);

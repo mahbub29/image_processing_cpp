@@ -107,14 +107,29 @@ cv::Mat get::getMeans (cv::Mat image, int windowSize)
 	cv::Mat window = cv::Mat::zeros(windowSize, windowSize, CV_64FC1);
 	double m;
 
+	double count = 0;
+	double progress;
+	double last_progress = 1000;
+	int total = image.rows*image.cols;
+	std::string dots = "";
+
 	std::cout << "Calculating Means" << "\n";
 	for (int i=0; i<height; i++) {
 		for (int j=0; j<width; j++) {
 			window = getWindow(image, windowSize, i, j);
 			m = cv::sum(window)[0]/(window.rows*window.cols);
 			means.at<double>(i,j) = m;
+
+			count++;
+			progress = floor(count/total*100);
+			if (progress != last_progress){
+				if (std::fmod(progress,5)==0) {dots += ".";}
+				std::cout << "\r" << progress << "%" << dots << std::flush;
+				last_progress = progress;
+			}
 		}
 	}
+	std::cout << "DONE\n";
 	
 	return means;
 }
@@ -130,6 +145,12 @@ cv::Mat get::getVariances (cv::Mat image, int windowSize, cv::Mat means)
 	cv::Mat_<double> sqr_window;
 	double m, v;
 
+	double count = 0;
+	double progress;
+	double last_progress = 1000;
+	int total = image.rows*image.cols;
+	std::string dots = "";
+
 	std::cout << "Calculating Variances" << "\n";
 	for (int i=0; i<height; i++) {
 		for (int j=0; j<width; j++) {
@@ -138,8 +159,17 @@ cv::Mat get::getVariances (cv::Mat image, int windowSize, cv::Mat means)
 			cv::pow(window, 2, sqr_window);
 			v = cv::sum(sqr_window-m)[0]/(window.rows*window.cols);
 			variances.at<double>(i,j) = v;
+
+			count++;
+			progress = floor(count/total*100);
+			if (progress != last_progress){
+				if (std::fmod(progress,5)==0) {dots += ".";}
+				std::cout << "\r" << progress << "%" << dots << std::flush;
+				last_progress = progress;
+			}
 		}
 	}
+	std::cout << "DONE\n";
 
 	return variances;
 }
@@ -230,6 +260,7 @@ cv::Mat get::get_nD_intensities
 
 	return intensities;
 }
+
 
 
 

@@ -26,7 +26,7 @@ class imageProcess
 		adaptiveFilterColor (int windowSize);
 
 		void
-		kmeansSegmentation ();
+		kmeansSegmentation (int selection);
 
 		std::vector<cv::Mat>
 		kmeans_nD_segmentation (int channels, cv::Mat i_vec, int ndims);

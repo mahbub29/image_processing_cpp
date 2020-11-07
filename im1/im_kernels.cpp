@@ -169,4 +169,45 @@ cv::Mat imageKernel::customInput ()
 }
 
 
+cv::Mat imageKernel::SelectAnOption (int option) {
+	cv::Mat imageOut;
+
+	switch (option) {
+		case 1:
+			imageOut = this->sharpen();
+			break;
+		case 2:
+			imageOut = this->blur();
+			break;
+		case 3:
+			imageOut = this->emboss();
+			break;
+		case 4:
+			imageOut = this->topSobel();
+			break;
+		case 5:
+			imageOut = this->bottomSobel();
+			break;
+		case 6:
+			imageOut = this->leftSobel();
+			break;
+		case 7:
+			imageOut = this->rightSobel();
+			break;
+		case 8:
+			imageOut = this->outline();
+			break;
+		case 9:
+			imageOut = this->smooth();
+			break;
+		case 10:
+			imageOut = this->customInput();
+			break;
+		default:
+			std::cout << "ERROR: That is not an option.\n";
+	}
+
+	return imageOut;
+}
+
 
