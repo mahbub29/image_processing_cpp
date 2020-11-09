@@ -4,7 +4,6 @@
 #include "im_kernels.hpp"
 #include <opencv2/opencv.hpp>
 
-
 int main()
 {   
     // std::string filePath = "/home/mahbub/ImageProcessing/im1/sample_image_t1.jpg";
@@ -13,6 +12,8 @@ int main()
     get get_;
     imageProcess imp_ (filePath);
     imageKernel kernel_ (filePath);
+
+    std::cout << imp_.COLOR << imp_.GRAYSCALE << "\n";
 
     char grayOrColor;
     bool noOptionSelected = true;
@@ -38,7 +39,7 @@ int main()
 
     int option, windowSize;
     noOptionSelected = true;
-    cv::Mat out;
+    cv::Mat out, colorPalette;
 
     while (noOptionSelected) {
         std::cin >> option;
@@ -71,8 +72,11 @@ int main()
                     break;
                 }
                 case 3: {
-                    imp_.kmeansSegmentation (1);
-                    break;
+                    std::vector<cv::Mat> imOut_n_paletteOut = imp_.kmeansSegmentation (imp_.GRAYSCALE);
+                    out = imOut_n_paletteOut[0];
+                    colorPalette = imOut_n_paletteOut[1];
+                    noOptionSelected = false;
+                    break;                    
                 }
                 case 4: {
                     std::cout << "Select which kernel to apply:\n"
@@ -125,7 +129,10 @@ int main()
                     break;
                 }
                 case 3: {
-                    imp_.kmeansSegmentation (2);
+                    std::vector<cv::Mat> imOut_n_paletteOut = imp_.kmeansSegmentation (imp_.COLOR);
+                    out = imOut_n_paletteOut[0];
+                    colorPalette = imOut_n_paletteOut[1];
+                    noOptionSelected = false;
                     break;
                 }
                 default: {
@@ -149,9 +156,16 @@ int main()
         cv::resizeWindow("Output",640,480);
         cv::imshow ("Original", in);
         cv::imshow ("Output", out);
-        cv::waitKey(0);
-        cv::destroyAllWindows();
     }
+
+    if (!colorPalette.empty()) {
+        cv::namedWindow("k-Means Color Palette", cv::WINDOW_NORMAL);
+        cv::resizeWindow("k-Means Color Palette", 640, 250);
+        cv::imshow ("k-Means Color Palette", colorPalette);
+    }
+
+    cv::waitKey(0);
+    cv::destroyAllWindows();
 
     return 0;
 }

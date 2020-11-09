@@ -7,7 +7,6 @@
 
 
 std::vector< std::vector<int> > LEFT_CLICKS;
-int n=0;
 
 int imageProcess::getMedian (cv::Mat window)
 {	
@@ -119,10 +118,7 @@ cv::Mat imageProcess::adaptiveFilter(cv::Mat image, int windowSize)
 
 imageProcess::imageProcess (std::string IMAGE_FILE_PATH)
 	: GrayImg(get::getGrayImg(IMAGE_FILE_PATH)), ColorImg(get::getColorImg(IMAGE_FILE_PATH))
-	{
-		int height = GrayImg.rows;
-		int width = GrayImg.cols;
-	}
+	{}
 
 
 cv::Mat imageProcess::medianFilterGray (int windowSize)
@@ -195,13 +191,13 @@ cv::Mat imageProcess::adaptiveFilterColor (int windowSize)
 }
 
 
-void imageProcess::kmeansSegmentation (int selection)
+std::vector<cv::Mat> imageProcess::kmeansSegmentation (int selection)
 {	
 	cv::Mat IMG;
 
 	if (selection == 0) {
 		std::cout << "Press 1 for Grayscale Segmentation.\n"
-				 "Press 2 for Color Segmentation.\n";
+				 	 "Press 2 for Color Segmentation.\n";
 
 		bool keepAsking = true;
 		
@@ -233,86 +229,85 @@ void imageProcess::kmeansSegmentation (int selection)
 	cv::Mat xyz;
 	cv::setMouseCallback ("Select Pixels", this->leftMouseClick, &xyz);
 	cv::imshow ("Select Pixels", IMG);
+	// cv::waitKey(0);
 
 	std::cout << "Select a minimum of 2 points.\n"
-				 "Press R to reset and clear your selection.\n"
-				 "Press V to verify your selection.\n"
-				 "Press Q to quit.\n\n";
+				 "Enter R to reset and clear your selection.\n"
+				 "Enter V to verify your selection.\n"
+				 "Enter Q to quit.\n\n";
 
 	char key1;
+	bool selectingPixels = true;
+
 	while (1) {
 		key1 = cv::waitKey(1);
 
 		if (key1=='q') {
 			cv::destroyAllWindows();
-			break;
+			selectingPixels = false;
 		}
 		else if (key1=='r') {
 			LEFT_CLICKS.clear();
 			std::cout << "Pixel selections cleared.\n"
 						 "Please select minimum of 2 points in the image window, "
 						 "or press Q to quit." << "\n";
-		} else if (key1=='v') {
+		}
+		else if (key1=='v') {
 			if (LEFT_CLICKS.size()<2) {
 				std::cout << "ERROR: Select at least 2 points, or press R to clear "
 				"the list or \"Q\" to quit." << "\n";
 			} else {
 				std::cout << "You have selected " << LEFT_CLICKS.size() << " points. "
-							 "Is this correct?\nPress Y to confirm, R to clear the list, "
+							 "Is this correct?\nEnter Y to confirm, R to clear the list, "
 							 "or continue clicking to add to your selection." << "\n";
 			}
-		} else if (key1=='y' && LEFT_CLICKS.size()>1) {
-
-			cv::Mat i_vec; // Matrix of intensity vectors
-			int ndims;
-
-			std::cout << "Starting k-Means Segmentation..." << "\n";
-			if (IMG.channels() == 1) {
-				// retrieve Grayscale intensities
-				i_vec = get::get_nD_intensities (IMG, LEFT_CLICKS, 1);
-				bool selectingDim = true;
-				while (selectingDim) {
-					std::cout << "Enter 1 for GRAY (1D) k-Means, or enter 3 for GRAYij (GRAY-3D) k-Means: ";
-					std::cin >> ndims;
-					if (ndims==1 || ndims==3) {
-						selectingDim = false;
-					} else {
-						std::cout << "ERROR: That is not an option. Please enter either 1 or 3.\n";
-					}
-
-				}
-			}
-			else {
-				bool selectingDim = true;
-				while (selectingDim) {
-					std::cout << "Enter 3 for RGB (COLOR-3D) k-Means, or enter 5 (COLOR-5D) for RGBij k-Means: ";
-					std::cin >> ndims;
-					if (ndims==3 || ndims==5) {
-						selectingDim = false;
-					} else {
-						std::cout << "ERROR: That is not an option. Please enter either 3 or 5.\n";
-					}
-				}
-			}
-
-			// retrieve RGB or RGBij intensities
-			i_vec = get::get_nD_intensities (IMG, LEFT_CLICKS, ndims);
-			std::cout << i_vec << "\n";
-
-			// conduct segmentation
-			std::cout << "Counducting segmentation...\n";
-			cv::Mat imageOut = this->kmeansConvergence (IMG.channels(), i_vec, ndims);
-
-			cv::namedWindow("Output", cv::WINDOW_NORMAL);
-			cv::resizeWindow("Output", 640, 480);
-			cv::imshow("Output", imageOut);
-			key1 = cv::waitKey(0);
+		}
+		else if (key1=='y' && LEFT_CLICKS.size()>1) {
+			selectingPixels = false;
 			cv::destroyAllWindows();
 			break;
 		}
 	}
 
-	return;
+	cv::destroyAllWindows();
+
+	int ndims;
+	if (IMG.channels()==1) {
+		bool selectingDim = true;
+		while (selectingDim) {
+			std::cout << "Enter 1 for GRAY (1D) k-Means, or enter 3 for GRAYij (GRAY-3D) k-Means: ";
+			std::cin >> ndims;
+			if (ndims==1 || ndims==3) {
+				selectingDim = false;
+			} else {
+				std::cout << "ERROR: That is not an option. Please enter either 1 or 3.\n";
+			}
+		}
+	}
+	else {
+		bool selectingDim = true;
+		while (selectingDim) {
+			std::cout << "Enter 3 for RGB (COLOR-3D) k-Means, or enter 5 (COLOR-5D) for RGBij k-Means: ";
+			std::cin >> ndims;
+			if (ndims==3 || ndims==5) {
+				selectingDim = false;
+			} else {
+				std::cout << "ERROR: That is not an option. Please enter either 3 or 5.\n";
+			}
+		}
+	}
+
+	cv::Mat i_vec; // Matrix of intensity vectors
+	std::cout << "Getting initial intensity vectors\n";
+	i_vec = get::get_nD_intensities (IMG, LEFT_CLICKS, ndims);
+	std::cout << "intensity vectors are:\n";
+	std::cout << i_vec << "\n";
+
+	// conduct segmentation
+	std::cout << "Counducting segmentation...\n";
+	std::vector<cv::Mat> imageOut_n_colorPalette = this->kmeansConvergence (IMG.channels(), i_vec, ndims);
+
+	return imageOut_n_colorPalette;
 }
 
 
@@ -591,7 +586,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 }
 
 
-cv::Mat imageProcess::kmeansConvergence (int channels, cv::Mat init_i_vec, int ndims)
+std::vector<cv::Mat> imageProcess::kmeansConvergence (int channels, cv::Mat init_i_vec, int ndims)
 {
 	// set arbitray initial previous intensity vector to compare to
 	cv::Mat prev_iVec = cv::Mat::ones (init_i_vec.size(), CV_64FC1)*1000;
@@ -610,22 +605,58 @@ cv::Mat imageProcess::kmeansConvergence (int channels, cv::Mat init_i_vec, int n
 		imageOut = iVec_n_imageOut[1];
 		SUMcurr = cv::sum(curr_iVec)[0];
 		SUMprev = cv::sum(prev_iVec)[0];
+		std::cout << SUMcurr << " " << SUMprev << "\n";
 	}
+
+	cv::Mat colorPalette = makeColorPalette (channels, curr_iVec);
+
+	std::cout << "FINISHED\n";
+
+	std::vector<cv::Mat> imageOut_n_colorPalette;
+	imageOut_n_colorPalette = {imageOut, colorPalette};
+
+	return imageOut_n_colorPalette;
+}
+
+
+cv::Mat imageProcess::makeColorPalette (int channels, cv::Mat i_vec)
+{
+	cv::Mat colorMatrix;
+	cv::Mat colorPalette;
 
 	if (channels == 3) {
-		for (int i=0; i<curr_iVec.cols; i++) {
-			std::cout << "Color " << i+1 << " = R:" << round(curr_iVec.at<double>(2,i))
-										   << " G:" << round(curr_iVec.at<double>(1,i))
-										   << " B:" << round(curr_iVec.at<double>(0,i)) << "\n";
+		colorMatrix = cv::Mat::ones (9, 3*i_vec.cols, CV_64FC1);
+		for (int i=0; i<i_vec.cols; i++) {
+			std::cout << "Color " << i+1 << " = R:" << round(i_vec.at<double>(2,i))
+										   << " G:" << round(i_vec.at<double>(1,i))
+										   << " B:" << round(i_vec.at<double>(0,i)) << "\n";
+
+			colorMatrix.rowRange(0,3).colRange(3*i,3*(i+1)) *= i_vec.at<double>(0,i);
+			colorMatrix.rowRange(3,6).colRange(3*i,3*(i+1)) *= i_vec.at<double>(1,i);
+			colorMatrix.rowRange(6,9).colRange(3*i,3*(i+1)) *= i_vec.at<double>(2,i);
 		}
+
+		cv::Mat blue, green, red;
+		colorMatrix.rowRange(0,3).colRange(0,3*i_vec.cols).copyTo(blue);
+		colorMatrix.rowRange(3,6).colRange(0,3*i_vec.cols).copyTo(green);
+		colorMatrix.rowRange(6,9).colRange(0,3*i_vec.cols).copyTo(red);
+
+		cv::Mat colorPalette_[3] = {blue, green, red};
+		cv::merge (colorPalette_, 3, colorPalette);
+		colorPalette.convertTo (colorPalette, CV_8UC3);
+
 	} else {
-		for (int i=0; i<curr_iVec.cols; i++) {
-			std::cout << "Grayscale intensity: " << i+1 << " = " << round(curr_iVec.at<double>(0,i)) << "\n";
+		colorMatrix = cv::Mat::ones (3, 3*i_vec.cols, CV_64FC1);
+		for (int i=0; i<i_vec.cols; i++) {
+			std::cout << "Grayscale intensity: " << i+1 << " = " << round(i_vec.at<double>(0,i)) << "\n";
+
+			colorMatrix.rowRange(0,3).colRange(3*i,3*(i+1)) *= i_vec.at<double>(0,i);
 		}
+
+		colorMatrix.copyTo(colorPalette);
+		colorPalette.convertTo (colorPalette, CV_8UC1);
 	}
 
-	std::cout << "FINISHED\n"
-				 "Click console and press Ctrl+C to quit.\n";
-
-	return imageOut;
+	return colorPalette;
 }
+

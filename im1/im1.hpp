@@ -11,6 +11,9 @@ class imageProcess
 		cv::Mat GrayImg;
 		cv::Mat ColorImg;
 
+		int GRAYSCALE = 1;
+		int COLOR = 2;
+
 		imageProcess (std::string IMAGE_FILE_PATH);
 
 		cv::Mat
@@ -25,7 +28,7 @@ class imageProcess
 		cv::Mat
 		adaptiveFilterColor (int windowSize);
 
-		void
+		std::vector<cv::Mat>
 		kmeansSegmentation (int selection);
 
 		std::vector<cv::Mat>
@@ -44,8 +47,11 @@ class imageProcess
 		static void
 		leftMouseClick (int event, int i, int j, int flags, void *params);
 
-		cv::Mat
+		std::vector<cv::Mat>
 		kmeansConvergence (int channels, cv::Mat i_vec, int ndims);
+
+		cv::Mat
+		makeColorPalette (int channels, cv::Mat i_vec);
 
 };
 #endif
