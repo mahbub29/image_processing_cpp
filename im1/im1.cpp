@@ -1,5 +1,5 @@
-
 #include <iostream>
+#include <ctime>
 #include "im1.hpp"
 #include "get.hpp"
 #include <opencv2/opencv.hpp>
@@ -8,8 +8,14 @@
 
 std::vector< std::vector<int> > LEFT_CLICKS;
 
+
+imageProcess::imageProcess (std::string IMAGE_FILE_PATH)
+	: GrayImg(get::getGrayImg(IMAGE_FILE_PATH)), ColorImg(get::getColorImg(IMAGE_FILE_PATH))
+	{}
+
+
 int imageProcess::getMedian (cv::Mat window)
-{	
+{
 	cv::Mat window_thread = cv::Mat::zeros(1, window.rows*window.cols, CV_8UC1);
 	window_thread = window.clone().reshape(0, window.rows*window.cols);
 	cv::sort(window_thread, window_thread, CV_SORT_ASCENDING);
@@ -18,7 +24,7 @@ int imageProcess::getMedian (cv::Mat window)
 	if ((window.rows*window.cols)%2==1) {
 		median = window_thread.at<uchar>(floor(window_thread.rows/2)-1);
 	} else {
-		median = (window_thread.at<uchar>(floor(window_thread.rows/2)-1) + 
+		median = (window_thread.at<uchar>(floor(window_thread.rows/2)-1) +
 				  window_thread.at<uchar>(floor(window_thread.rows/2)))/2;
 	}
 
@@ -27,9 +33,9 @@ int imageProcess::getMedian (cv::Mat window)
 
 
 cv::Mat imageProcess::medianFilter (cv::Mat image, int windowSize)
-{	
+{
 	if (windowSize%2!=1) {
-		std::cout << "ERROR: windowSize must be odd int" << std::endl;
+		std::cout << "ERROR: windowSize must be odd INT" << std::endl;
 	} else {
 		int height = image.rows;
 		int width = image.cols;
@@ -47,7 +53,7 @@ cv::Mat imageProcess::medianFilter (cv::Mat image, int windowSize)
 			for (int j=0; j<width; j++) {
 				window = get::getWindow(image, windowSize, i, j);
 				imageOut.row(i).col(j) = this->getMedian(window);
-				
+
 				count++;
 				progress = floor(count/total*100);
 				std::cout << "\r" << progress << "%" << std::flush;
@@ -116,11 +122,6 @@ cv::Mat imageProcess::adaptiveFilter(cv::Mat image, int windowSize)
 }
 
 
-imageProcess::imageProcess (std::string IMAGE_FILE_PATH)
-	: GrayImg(get::getGrayImg(IMAGE_FILE_PATH)), ColorImg(get::getColorImg(IMAGE_FILE_PATH))
-	{}
-
-
 cv::Mat imageProcess::medianFilterGray (int windowSize)
 {
 	std::cout << "Processing GRAY Median Filter" << std::endl;
@@ -132,7 +133,7 @@ cv::Mat imageProcess::medianFilterGray (int windowSize)
 
 
 cv::Mat imageProcess::medianFilterRGB (int windowSize)
-{	
+{
 	cv::Mat bgr[3]; // Split image into BGR color channels
 	cv::split (ColorImg, bgr); // split the color channels int the image
 	cv::Mat blue = bgr[0];
@@ -187,12 +188,12 @@ cv::Mat imageProcess::adaptiveFilterColor (int windowSize)
 	cv::Mat imageOut(bgr[0].size(), CV_8UC3);
 	cv::merge (imageChannels, 3, imageOut);
 
-	return imageOut;	
+	return imageOut;
 }
 
 
-std::vector<cv::Mat> imageProcess::kmeansSegmentation (int selection)
-{	
+std::vector<cv::Mat> imageProcess::kmeansSegmentation (int selection, bool choose)
+{
 	cv::Mat IMG;
 
 	if (selection == 0) {
@@ -200,7 +201,7 @@ std::vector<cv::Mat> imageProcess::kmeansSegmentation (int selection)
 				 	 "Press 2 for Color Segmentation.\n";
 
 		bool keepAsking = true;
-		
+
 		while (keepAsking) {
 			char option;
 			std::cin >> option;
@@ -222,7 +223,7 @@ std::vector<cv::Mat> imageProcess::kmeansSegmentation (int selection)
 		IMG = GrayImg;
 	} else if (selection == 2) {
 		IMG = ColorImg;
-	}	
+	}
 
 	cv::namedWindow ("Select Pixels", cv::WINDOW_NORMAL);
 	cv::resizeWindow ("Select Pixels", 640, 480);
@@ -239,34 +240,52 @@ std::vector<cv::Mat> imageProcess::kmeansSegmentation (int selection)
 	char key1;
 	bool selectingPixels = true;
 
-	while (1) {
-		key1 = cv::waitKey(1);
+	if (choose==true) {
+		while (1) {
+			key1 = cv::waitKey(1);
 
-		if (key1=='q') {
-			cv::destroyAllWindows();
-			selectingPixels = false;
-		}
-		else if (key1=='r') {
-			LEFT_CLICKS.clear();
-			std::cout << "Pixel selections cleared.\n"
-						 "Please select minimum of 2 points in the image window, "
-						 "or press Q to quit." << "\n";
-		}
-		else if (key1=='v') {
-			if (LEFT_CLICKS.size()<2) {
-				std::cout << "ERROR: Select at least 2 points, or press R to clear "
-				"the list or \"Q\" to quit." << "\n";
-			} else {
-				std::cout << "You have selected " << LEFT_CLICKS.size() << " points. "
-							 "Is this correct?\nEnter Y to confirm, R to clear the list, "
-							 "or continue clicking to add to your selection." << "\n";
+			if (key1=='q') {
+				cv::destroyAllWindows();
+				selectingPixels = false;
+			}
+			else if (key1=='r') {
+				LEFT_CLICKS.clear();
+				std::cout << "Pixel selections cleared.\n"
+							 "Please select minimum of 2 points in the image window, "
+							 "or press Q to quit." << "\n";
+			}
+			else if (key1=='v') {
+				if (LEFT_CLICKS.size()<2) {
+					std::cout << "ERROR: Select at least 2 points, or press R to clear "
+					"the list or \"Q\" to quit." << "\n";
+				} else {
+					std::cout << "\nYou have selected " << LEFT_CLICKS.size() << " points. "
+								 "Is this correct?\nEnter Y to confirm, R to clear the list, "
+								 "or continue clicking to add to your selection." << "\n";
+				}
+			}
+			else if (key1=='y' && LEFT_CLICKS.size()>1) {
+				selectingPixels = false;
+				cv::destroyAllWindows();
+				break;
 			}
 		}
-		else if (key1=='y' && LEFT_CLICKS.size()>1) {
-			selectingPixels = false;
-			cv::destroyAllWindows();
-			break;
+	} else {
+		int seeds;
+		std::cout << "Number of seed points: ";
+		std::cin >> seeds;
+
+		int i,j;
+		std::vector<int> p;
+		std::srand (time(NULL));
+		for (int s=0; s<seeds; s++) {
+			i = std::rand()%IMG.rows;
+			j = std::rand()%IMG.cols;
+			p = {i,j};
+			LEFT_CLICKS.push_back(p);
 		}
+		sort(LEFT_CLICKS.begin(), LEFT_CLICKS.end() );
+		LEFT_CLICKS.erase( unique(LEFT_CLICKS.begin(), LEFT_CLICKS.end()), LEFT_CLICKS.end() );
 	}
 
 	cv::destroyAllWindows();
@@ -314,8 +333,11 @@ std::vector<cv::Mat> imageProcess::kmeansSegmentation (int selection)
 void imageProcess::leftMouseClick (int event, int j, int i, int flags, void *param)
 {
 	cv::Mat &xyz = *((cv::Mat*)param);
-	if (event==cv::EVENT_LBUTTONDOWN) {
-		std::cout << "row=" << i << ", col=" << j << "\n";
+
+	if (event==0) {
+		std::cout << "\r" << "row:" << i << ", col:" << j << "   " << LEFT_CLICKS.size() << " pixels selected" << std::flush;
+		std::cout << "                                                  ";
+	} else if (event==cv::EVENT_LBUTTONDOWN) {
 		std::vector<int> v;
 		v.push_back(i);
 		v.push_back(j);
@@ -336,7 +358,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 
 		// split image matrix to BGR channels
 		cv::Mat imageThread = ColorImg.clone().reshape(3,1);
-		
+
 		cv::Mat bgrThread[ndims];
 		cv::split(imageThread, bgrThread);
 
@@ -375,7 +397,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 	    cv::vconcat(m, imagePixelVectors);
 
 	    // Make vectors to store the cluster sums as well as the total nymber
-		// belonging to each cluster 
+		// belonging to each cluster
 		std::vector< cv::Mat_<double> > k_sums(k_num);
 		std::vector<int> k_tots(k_num);
 
@@ -400,7 +422,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 			}
 			k_tots[i] = 0;
 
-			cv::Mat I = cv::Mat::zeros(imagePixelVectors.size(), CV_64FC1); 
+			cv::Mat I = cv::Mat::zeros(imagePixelVectors.size(), CV_64FC1);
 			for (int n=0; n<imagePixelVectors.cols; n++) {
 				i_vec.col(i).copyTo(I.col(n));
 			}
@@ -472,7 +494,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 		int k_num = i_vec.cols;
 
 		// split image matrix to BGR channels
-		cv::Mat grayThread[ndims] = GrayImg.clone().reshape(1,1);
+		cv::Mat grayThread[ndims] = {GrayImg.clone().reshape(1,1)};
 
 		// convert image matrix to doubles
 	    grayThread[0].convertTo(grayThread[0], CV_64FC1);
@@ -503,14 +525,14 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 	    cv::vconcat(m, imagePixelVectors);
 
 	    // Make vectors to store the cluster sums as well as the total nymber
-		// belonging to each cluster 
+		// belonging to each cluster
 		std::vector< cv::Mat_<double> > k_sums(k_num);
 		std::vector<int> k_tots(k_num);
 
 		// Matrix to store the difference between each image pixel and the currently
 		// calculated k-means values
 		cv::Mat_<double> delta = cv::Mat::zeros (k_num, grayThread[0].cols, CV_64FC1);
-	    
+
 		cv::Mat sqrDiff; // matrix to save the squared differeneces
 		cv::Mat pixelLabels = cv::Mat::ones(k_num, grayThread[0].cols, CV_32FC1); // array containing the k number of labels
 
@@ -523,7 +545,7 @@ std::vector<cv::Mat> imageProcess::kmeans_nD_segmentation (int channels, cv::Mat
 			}
 			k_tots[i] = 0;
 
-			cv::Mat I = cv::Mat::zeros(imagePixelVectors.size(), CV_64FC1); 
+			cv::Mat I = cv::Mat::zeros(imagePixelVectors.size(), CV_64FC1);
 			for (int n=0; n<imagePixelVectors.cols; n++) {
 				i_vec.col(i).copyTo(I.col(n));
 			}
@@ -605,12 +627,11 @@ std::vector<cv::Mat> imageProcess::kmeansConvergence (int channels, cv::Mat init
 		imageOut = iVec_n_imageOut[1];
 		SUMcurr = cv::sum(curr_iVec)[0];
 		SUMprev = cv::sum(prev_iVec)[0];
-		std::cout << SUMcurr << " " << SUMprev << "\n";
 	}
 
 	cv::Mat colorPalette = makeColorPalette (channels, curr_iVec);
 
-	std::cout << "FINISHED\n";
+	std::cout << "FINISHED.\nPress any key to Quit.\n";
 
 	std::vector<cv::Mat> imageOut_n_colorPalette;
 	imageOut_n_colorPalette = {imageOut, colorPalette};
@@ -659,4 +680,3 @@ cv::Mat imageProcess::makeColorPalette (int channels, cv::Mat i_vec)
 
 	return colorPalette;
 }
-

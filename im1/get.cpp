@@ -21,7 +21,7 @@ cv::Mat get::getWindow (cv::Mat image, int windowSize, int i, int j)
 	int limit = floor(windowSize/2);
 
 	cv::Mat window = cv::Mat::zeros(windowSize, windowSize, CV_64FC1);
-	/** 
+	/**
 	CV_##AC#
 	CV_   is compulsory prefix
 	##    is the number of bits per matrix element
@@ -99,7 +99,7 @@ std::string get::getType (int type)
 
 
 cv::Mat get::getMeans (cv::Mat image, int windowSize)
-{	
+{
 	int height = image.rows;
 	int width = image.cols;
 
@@ -130,13 +130,13 @@ cv::Mat get::getMeans (cv::Mat image, int windowSize)
 		}
 	}
 	std::cout << "DONE\n";
-	
+
 	return means;
 }
 
 
 cv::Mat get::getVariances (cv::Mat image, int windowSize, cv::Mat means)
-{	
+{
 	int height = image.rows;
 	int width = image.cols;
 
@@ -203,9 +203,6 @@ cv::Mat get::getColorImg (std::string file_path) {
 
 cv::Mat get::get_nD_intensities
 (cv::Mat IMG, std::vector< std::vector<int> > selection, int ndims) {
-	
-	// *** POSSIBLE ERROR HERE IN DATA TYPE CONVERSIONS AND ENTRIES
-	// *** CHECK WHEN DEBUGGINH
 
 	int i; // row number
 	int j; // column number
@@ -221,26 +218,26 @@ cv::Mat get::get_nD_intensities
 		for (int n=0; n<selection.size(); n++) {
 			i = selection[n][0];
 			j = selection[n][1];
-			
+
 			intensities.row(0).col(n) = IMG.at<double>(i,j);
 
 			// if 5D add the row and column as the 4th and 5th dimensions respectively
 			if (ndims==3) {
 				intensities.row(1).col(n) = i;
 				intensities.row(2).col(n) = j;
-			}	
+			}
 		}
 	} else {
 		// convert from uint8 to float64
 		IMG.convertTo(IMG, CV_64FC3);
 
-		// For color		
+		// For color
 		// split color image channels
 		cv::Mat bgr[3];
 		cv::split(IMG, bgr);
 		cv::Mat blue = bgr[0];
 		cv::Mat green = bgr[1];
-		cv::Mat red = bgr[2];	
+		cv::Mat red = bgr[2];
 
 		for (int n=0; n<selection.size(); n++) {
 			i = selection[n][0];
@@ -260,12 +257,3 @@ cv::Mat get::get_nD_intensities
 
 	return intensities;
 }
-
-
-
-
-
-
-
-
-
