@@ -13,7 +13,20 @@ class histogramProcess
 
     histogramProcess (std::string IMAGE_FILE_PATH);
 
-    void
-    getImageHistogram ();
+    std::vector<int>
+    getImageHistogram (cv::Mat image=NULL_MAT, bool showPlot=false, bool saveFig=false);
+
+    std::vector<int>
+    getCumulativeImageHist (bool showPlot=false, bool saveFig=false);
+
+    cv::Mat
+    getEqualizedImage (cv::Mat image=NULL_MAT, bool showPlot=false, bool saveFig=false);
+
+    cv::Mat
+    getEqlColor ();
+
+  private:
+    static cv::Mat NULL_MAT;
+
 };
 #endif
