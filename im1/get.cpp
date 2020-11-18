@@ -257,3 +257,36 @@ cv::Mat get::get_nD_intensities
 
 	return intensities;
 }
+
+
+cv::Mat padImage (cv::Mat image, int padding) {
+	cv::Mat paddedImg = cv::Mat::zeros (image.rows+2*padding, image.cols+2*padding, CV_8UC1);
+	image.copyTo(paddedImg.rowRange(padding, paddedImg.rows-padding).colRange(padding, paddedImg.cols-padding));
+
+	return paddedImg;
+}
+
+
+cv::Mat get::getPaddedImage (cv::Mat image, int padding) {
+	cv::Mat paddedImg;
+	std::cout << "Padding image matrix...";
+
+	if (image.channels()==3) {
+		std::vector<cv::Mat> paddedBgr;
+		cv::Mat b, g, r;
+
+		cv::Mat bgr[3];
+		cv::split (image, bgr);
+
+		b = padImage (bgr[0],padding);
+		g = padImage (bgr[1],padding);
+		r = padImage (bgr[2],padding);
+		paddedBgr = {b,g,r};
+		cv::merge (paddedBgr,paddedImg);
+	} else {
+		paddedImg = padImage (image, padding);
+	}
+	std::cout << "DONE\n";
+
+	return paddedImg;
+}

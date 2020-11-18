@@ -36,6 +36,9 @@ class get
 		// gets Grayscale, RGB or RGBij intensity vectors
 		static cv::Mat
 		get_nD_intensities (cv::Mat IMG, std::vector< std::vector<int> > selection, int dims=3);
+
+		// pads the image with a specified number of zeros
+		static cv::Mat
+		getPaddedImage (cv::Mat image, int padding);
 };
 #endif
-

@@ -44,8 +44,7 @@ cv::Mat imageProcess::medianFilter (cv::Mat image, int windowSize)
 		cv::Mat imageOut = cv::Mat::zeros(height, width, CV_64FC1);
 		double count = 0;
 		double progress;
-		double last_progress = 1000;
-		int total = image.rows*image.cols;
+		double total = image.rows*image.cols;
 
 		std::cout << "Applying Median Filter to channel...\n";
 
@@ -55,12 +54,11 @@ cv::Mat imageProcess::medianFilter (cv::Mat image, int windowSize)
 				imageOut.row(i).col(j) = this->getMedian(window);
 
 				count++;
-				progress = floor(count/total*100);
-				std::cout << "\r" << progress << "%" << std::flush;
-				last_progress = progress;
+	      progress = round(count/total*10000)/100;
+	      std::cout << "\r" <<  progress << "%" << std::flush;
 			}
 		}
-		std::cout << " - DONE\n";
+		std::cout << " [DONE]\n";
 
 		imageOut.convertTo(imageOut, CV_8UC1);
 		return imageOut;
@@ -87,9 +85,7 @@ cv::Mat imageProcess::adaptiveFilter(cv::Mat image, int windowSize)
 
 	double count = 0;
 	double progress;
-	double last_progress = 1000;
-	int total = image.rows*image.cols;
-	std::string dots = "";
+	double total = image.rows*image.cols;
 
 	std::cout << "Appying Adaptive Filter to channel\n";
 
@@ -106,15 +102,11 @@ cv::Mat imageProcess::adaptiveFilter(cv::Mat image, int windowSize)
 			imageOut.row(i).col(j) = round(m + (v-lv)/v * (p-m));
 
 			count++;
-			progress = floor(count/total*100);
-			if (progress != last_progress){
-				if (std::fmod(progress,5)==0) {dots += ".";}
-				std::cout << "\r" << progress << "%" << dots << std::flush;
-				last_progress = progress;
-			}
+      progress = round(count/total*10000)/100;
+      std::cout << "\r" <<  progress << "%" << std::flush;
 		}
 	}
-	std::cout << "DONE\n";
+	std::cout << " [DONE]\n";
 
 	imageOut.convertTo(imageOut, CV_8UC1);
 
@@ -230,7 +222,7 @@ std::vector<cv::Mat> imageProcess::kmeansSegmentation (int selection, bool choos
 	cv::Mat xyz;
 	cv::setMouseCallback ("Select Pixels", this->leftMouseClick, &xyz);
 	cv::imshow ("Select Pixels", IMG);
-	// cv::waitKey(0);
+	cv::waitKey(0);
 
 	std::cout << "Select a minimum of 2 points.\n"
 				 "Enter R to reset and clear your selection.\n"

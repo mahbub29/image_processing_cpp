@@ -2,27 +2,35 @@
 #include "im1.hpp"
 #include "im2.hpp"
 #include "get.hpp"
+#include "NLM.hpp"
 #include "im_kernels.hpp"
 #include <opencv2/opencv.hpp>
 
 
-
-
-int main()
+#include <fstream>
+void writeCSV(std::string filename, cv::Mat m)
 {
-    // std::string filePath = "/home/mahbub/ImageProcessing/im1/sample_image_t1.jpg";
-    // // std::string filePath = "/home/mahbub/Downloads/http___cdn.cnn.com_cnnnext_dam_assets_181010131059-australia-best-beaches-cossies-beach-cocos3.jpg";
-    std::string filePath = "/home/mahbub/Downloads/DSC_0540.jpg";
+   std::ofstream myfile;
+   myfile.open(filename.c_str());
+   myfile<< cv::format(m, cv::Formatter::FMT_CSV) << std::endl;
+   myfile.close();
+}
 
+
+int main (int argc, char *argv[])
+{
+    std::string filePath = argv[1];
+    // std::string a = argv[2]; int imType = std::stoi(a);
+    // a = argv[3]; int r = std::stoi(a);
 
     get get_;
     imageProcess imp_ (filePath);
     histogramProcess histo_ (filePath);
     imageKernel kernel_ (filePath);
+    NLM nlm_;
 
     char grayOrColor;
     bool noOptionSelected = true;
-
 
     std::cout << "Enter G for Grayscale or C for Color and press ENTER: ";
     while (noOptionSelected) {
@@ -34,14 +42,14 @@ int main()
         }
     }
 
-
     std::cout << "Enter the number of the process you would like to run and press ENTER.\n"
                  "1. Apply Median Filter\n"
                  "2. Apply Adaptive Filter\n"
                  "3. Run k-Means Segmentation\n"
-                 "4. Get Equalized Image\n";
+                 "4. Get Equalized Image\n"
+                 "5. Peform NLM denoising\n";
     if (grayOrColor == 'g' || grayOrColor == 'G') {
-        std::cout << "5. Apply a kernel (options will be provided).\n";
+        std::cout << "6. Apply a kernel (options will be provided).\n";
     }
 
     int option, windowSize;
@@ -93,6 +101,16 @@ int main()
                     break;
                 }
                 case 5: {
+                    std::cout << "Please enter SPACE separated values for\n"
+                                 "h sigma patchRadius windowRadius\n"
+                                 "in that order\n"
+                                 "Values: ";
+                    std::string rawInput;
+                    std::vector<std::string> vals;
+                    while (std::getline (std::cin, rawInput, ' ')) { vals.push_back (rawInput); }
+                    for (int i=0; vals.size(); i++) std::cout << vals[i] << "\n";
+                }
+                case 6: {
                     std::cout << "Select which kernel to apply:\n"
                                  "1. Sharpen\n"
                                  "2. Blur\n"
@@ -150,12 +168,13 @@ int main()
                     noOptionSelected = false;
                     break;
                 }
-                case 4:
+                case 4: {
                     std::cout << "Equalizing image...\n";
                     out = histo_.getEqlColor ();
                     noOptionSelected = false;
                     std::cout << "Press any key to Quit.\n";
                     break;
+                }
                 default: {
                     std::cout << "ERROR: "<< option << " is not an option.\n";
                 }
