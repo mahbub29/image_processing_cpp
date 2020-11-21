@@ -123,9 +123,6 @@ std::vector<cv::Mat> NLM::naiveTemplateMatching (cv::Mat paddedImg, int row, int
                                                      // between corresponding pixels
       sqrDiffSum = cv::sum (sqrDiff)[0]; // calculate sum of square differences between patches
       distance.row(i-patchRadius).col(j-patchRadius) = sqrDiffSum/pow(patchSize,2); // store it in distances
-
-      // count++;
-      // std::cout << count << " ";
     }
   }
 
@@ -138,14 +135,15 @@ std::vector<cv::Mat> NLM::naiveTemplateMatching (cv::Mat paddedImg, int row, int
 
 double NLM::computeWeighting (cv::Mat distance, cv::Mat searchWindow, double h, double sigma, int best)
 {
-
+  // reshape distances and search window into two lines of numbers
   distance = distance.reshape (1,1);
   searchWindow = searchWindow.reshape (1,1);
 
+  // sort the distances in order from lowest to highest and line get
+  // the corresponding pixels
   cv::Mat distIds;
   cv::sortIdx (distance, distIds, cv::SORT_EVERY_ROW+cv::SORT_ASCENDING);
   distIds.convertTo (distIds, CV_64FC1);
-
   int idx;
   cv::Mat distance_sorted = cv::Mat::zeros (distance.size(), CV_64FC1);
   cv::Mat corresponding_pixels = cv::Mat::zeros (distance.size(), CV_64FC1);
@@ -155,6 +153,8 @@ double NLM::computeWeighting (cv::Mat distance, cv::Mat searchWindow, double h, 
     corresponding_pixels.row(0).col(i) = searchWindow.at<double>(0,idx);
   }
 
+  // get the weight of the top pixels and multiply the weights by
+  // the correspodning pixels
   cv::Mat weights = cv::Mat::zeros (distance_sorted.size(),CV_64FC1);
   double d2, w;
   for (int i=0; i<best; i++) {
@@ -163,23 +163,10 @@ double NLM::computeWeighting (cv::Mat distance, cv::Mat searchWindow, double h, 
     weights.row(0).col(i) = w;
   }
   weights = weights*(1/cv::sum(weights)[0]);
-
   cv::Mat product; cv::multiply (weights, corresponding_pixels, product);
-  double denoisedVal = cv::sum (product)[0];
-  // std::cout << product << "\n\n" << denoisedVal << "\n\n";
-  // std::cout << weights << "\n\n" << corresponding_pixels << "\n\n";
 
-  // cv::Mat ZERO_MAT = cv::Mat::zeros (distance.size(), CV_64FC1);
-  // cv::Mat distDiff = distance-2*sigma*sigma;
-  // cv::Mat num; cv::max (ZERO_MAT, distDiff, num);
-  // cv::Mat x = -1/(h*h)*num;
-  // cv::Mat w; cv::exp (x, w);
-  //
-  // double C = cv::sum (w)[0];
-  // cv::Mat B_Mat; cv::multiply (searchWindow, w, B_Mat);
-  // double B = (1/C)*cv::sum(B_Mat)[0];
-  //
-  // return B;
+  double denoisedVal = cv::sum (product)[0];
+
   return denoisedVal;
 }
 
