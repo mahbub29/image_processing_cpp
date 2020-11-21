@@ -40,5 +40,9 @@ class get
 		// pads the image with a specified number of zeros
 		static cv::Mat
 		getPaddedImage (cv::Mat image, int padding);
+		
+		// writes a csv file with for the specified matrix
+		static void
+		writeCSV(std::string filename, cv::Mat m);
 };
 #endif

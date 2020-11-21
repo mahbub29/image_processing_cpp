@@ -7,14 +7,6 @@
 #include <opencv2/opencv.hpp>
 
 
-#include <fstream>
-void writeCSV(std::string filename, cv::Mat m)
-{
-   std::ofstream myfile;
-   myfile.open(filename.c_str());
-   myfile<< cv::format(m, cv::Formatter::FMT_CSV) << std::endl;
-   myfile.close();
-}
 
 
 int main (int argc, char *argv[])
@@ -29,8 +21,12 @@ int main (int argc, char *argv[])
     imageKernel kernel_ (filePath);
     NLM nlm_;
 
+
+
     char grayOrColor;
     bool noOptionSelected = true;
+
+
 
     std::cout << "Enter G for Grayscale or C for Color and press ENTER: ";
     while (noOptionSelected) {
@@ -102,13 +98,16 @@ int main (int argc, char *argv[])
                 }
                 case 5: {
                     std::cout << "Please enter SPACE separated values for\n"
-                                 "h sigma patchRadius windowRadius\n"
+                                 "   h  sigma  patchRadius  windowRadius\n"
                                  "in that order\n"
                                  "Values: ";
-                    std::string rawInput;
-                    std::vector<std::string> vals;
-                    while (std::getline (std::cin, rawInput, ' ')) { vals.push_back (rawInput); }
-                    for (int i=0; vals.size(); i++) std::cout << vals[i] << "\n";
+                    std::vector<double> val(4);
+                    for (int i=0; i<4; i++) { std::cin >> val[i]; }
+                    cv::Mat gI = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
+                    double h=val[0]; double sigma=val[1]; int pR=val[2]; int wR=val[3];
+                    out = nlm_.nonLocalMeans (gI,h,sigma,pR,wR);
+                    noOptionSelected = false;
+                    break;
                 }
                 case 6: {
                     std::cout << "Select which kernel to apply:\n"
@@ -173,6 +172,19 @@ int main (int argc, char *argv[])
                     out = histo_.getEqlColor ();
                     noOptionSelected = false;
                     std::cout << "Press any key to Quit.\n";
+                    break;
+                }
+                case 5: {
+                    std::cout << "Please enter SPACE separated values for\n"
+                                 "   h  sigma  patchRadius  windowRadius\n"
+                                 "in that order\n"
+                                 "Values: ";
+                    std::vector<double> val(4);
+                    for (int i=0; i<4; i++) { std::cin >> val[i]; }
+                    cv::Mat cI = cv::imread (filePath, cv::IMREAD_COLOR);
+                    double h=val[0]; double sigma=val[1]; int pR=val[2]; int wR=val[3];
+                    out = nlm_.nonLocalMeans (cI,h,sigma,pR,wR);
+                    noOptionSelected = false;
                     break;
                 }
                 default: {

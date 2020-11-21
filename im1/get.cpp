@@ -269,7 +269,7 @@ cv::Mat padImage (cv::Mat image, int padding) {
 
 cv::Mat get::getPaddedImage (cv::Mat image, int padding) {
 	cv::Mat paddedImg;
-	std::cout << "Padding image matrix...";
+	std::cout << "Padding image matrix";
 
 	if (image.channels()==3) {
 		std::vector<cv::Mat> paddedBgr;
@@ -286,7 +286,15 @@ cv::Mat get::getPaddedImage (cv::Mat image, int padding) {
 	} else {
 		paddedImg = padImage (image, padding);
 	}
-	std::cout << "DONE\n";
+	std::cout << " [DONE]\n";
 
 	return paddedImg;
+}
+
+
+void get::writeCSV(std::string filename, cv::Mat m) {
+   std::ofstream myfile;
+   myfile.open(filename.c_str());
+   myfile<< cv::format(m, cv::Formatter::FMT_CSV) << std::endl;
+   myfile.close();
 }

@@ -4,11 +4,13 @@
 #include "NLM.hpp"
 #include "get.hpp"
 #include <chrono>
+#include <fstream>
 
 
 
-cv::Mat NLM::nonLocalMeans (cv::Mat img, double h, double sigma, int patchRadius, int windowRadius)
+cv::Mat NLM::nonLocalMeans (cv::Mat img, double h, double sigma, int patchRadius, int windowRadius, int best)
 {
+  std::cout << "Denoising input image\n";
   auto start_time = std::chrono::high_resolution_clock::now(); // start timer
 
   int cn = img.channels();
@@ -19,17 +21,17 @@ cv::Mat NLM::nonLocalMeans (cv::Mat img, double h, double sigma, int patchRadius
     cv::Mat bgr[3], b, g, r;
     cv::split (img, bgr);
     std::cout << "Blue Channel\n";
-    b = this->nonLocalMeans_singleChannel(bgr[0], h, sigma, patchRadius, windowRadius);
+    b = this->nonLocalMeans_singleChannel(bgr[0], h, sigma, patchRadius, windowRadius, best);
     std::cout << "Green Channel\n";
-    g = this->nonLocalMeans_singleChannel(bgr[1], h, sigma, patchRadius, windowRadius);
+    g = this->nonLocalMeans_singleChannel(bgr[1], h, sigma, patchRadius, windowRadius, best);
     std::cout << "Red Channel\n";
-    r = this->nonLocalMeans_singleChannel(bgr[2], h, sigma, patchRadius, windowRadius);
+    r = this->nonLocalMeans_singleChannel(bgr[2], h, sigma, patchRadius, windowRadius, best);
     std::vector<cv::Mat> vec = {b,g,r};
     cv::merge (vec, imageOut);
   }
   else {
     // if grayscale image
-    imageOut = this->nonLocalMeans_singleChannel(img, h, sigma, patchRadius, windowRadius);
+    imageOut = this->nonLocalMeans_singleChannel(img, h, sigma, patchRadius, windowRadius, best);
   }
 
   auto end_time = std::chrono::high_resolution_clock::now(); // end timer
@@ -40,17 +42,16 @@ cv::Mat NLM::nonLocalMeans (cv::Mat img, double h, double sigma, int patchRadius
 }
 
 
-cv::Mat NLM::nonLocalMeans_singleChannel (cv::Mat img, double h, double sigma, int patchRadius, int windowRadius)
+cv::Mat NLM::nonLocalMeans_singleChannel (cv::Mat img, double h, double sigma, int patchRadius, int windowRadius, int best)
 {
   // pad image with zeros depending on window size and patch size
-  cv::Mat paddedImg = get::getPaddedImage (img, patchRadius+windowRadius);
+  cv::Mat paddedImg = get::getPaddedImage (img, windowRadius);
 
   // set boundaries for iteration
-  int beginRow, beginCol, endRow, endCol, padding;
-  padding = patchRadius+windowRadius;
-  beginRow = beginCol = padding;
-  endRow = img.rows+padding;
-  endCol = img.cols+padding;
+  int beginRow, beginCol, endRow, endCol;
+  beginRow = beginCol = windowRadius;
+  endRow = paddedImg.rows-windowRadius;
+  endCol = paddedImg.cols-windowRadius;
 
   // set space for output variables
   std::vector<cv::Mat> var;
@@ -67,8 +68,8 @@ cv::Mat NLM::nonLocalMeans_singleChannel (cv::Mat img, double h, double sigma, i
     for (int j=beginCol; j<endCol; j++) {
       var = this->naiveTemplateMatching (paddedImg, i, j, patchRadius, windowRadius);
       searchWindow = var[0]; distance = var[1];
-      pixel = this->computeWeighting (distance, searchWindow, h, sigma);
-      imgOut64.row(i-padding).col(j-padding) = pixel;
+      pixel = this->computeWeighting (distance, searchWindow, h, sigma, best);
+      imgOut64.row(i-windowRadius).col(j-windowRadius) = pixel;
 
       count++;
       progress = round(count/total*10000)/100;
@@ -90,7 +91,7 @@ std::vector<cv::Mat> NLM::naiveTemplateMatching (cv::Mat paddedImg, int row, int
   int windowSize = windowRadius*2+1;
 
   cv::Mat img64; paddedImg.convertTo (img64, CV_64FC1); // convert padded image from uint8 to double
-  cv::Mat distance = cv::Mat::zeros (windowSize, windowSize, CV_64FC1); // to store the ssd distances
+  cv::Mat distance = cv::Mat::zeros (windowSize-patchSize+1, windowSize-patchSize+1, CV_64FC1); // to store the ssd distances
 
   // Define the template patch to be tested
   cv::Mat templatePatch = img64.rowRange(row-patchRadius,row+patchRadius+1)
@@ -99,51 +100,87 @@ std::vector<cv::Mat> NLM::naiveTemplateMatching (cv::Mat paddedImg, int row, int
   // Define the search window within the image (this includes that
   // the patch can centre on the outer pixels and therefore overlap the
   // edges of the search window box as well)
-  cv::Mat templateWindow = img64.rowRange(row-windowRadius,row+windowRadius+1)
-                                .colRange(col-windowRadius,col+windowRadius+1);
-  cv::Mat searchWindow   = img64.rowRange(row-patchRadius-windowRadius,row+patchRadius+windowRadius+1)
-                                .colRange(col-patchRadius-windowRadius,col+patchRadius+windowRadius+1);
+  cv::Mat searchWindow; img64.rowRange(row-windowRadius,row+windowRadius+1)
+                             .colRange(col-windowRadius,col+windowRadius+1)
+                             .copyTo (searchWindow);
+  cv::Mat _searchWindow_; img64.rowRange(row-windowRadius+patchRadius,row+windowRadius-patchRadius+1)
+                             .colRange(col-windowRadius+patchRadius,col+windowRadius-patchRadius+1)
+                             .copyTo (_searchWindow_);
 
   // iterate over each of the pixels within the desired search window and
   // get the sum of the squared differences
   cv::Mat testPatch; // variable to store test patch
   cv::Mat sqrDiff;   // variable to store square distances
   double sqrDiffSum; // variable to store sum of squared differences
-  for (int i=patchRadius; i<windowSize; i++) {
-    for (int j=patchRadius; j<windowSize; j++) {
+  int count=0;
+
+  for (int i=patchRadius; i<windowSize-patchRadius; i++) {
+    for (int j=patchRadius; j<windowSize-patchRadius; j++) {
       // designate test patch matrix centered at p(i,j)
       testPatch = searchWindow.rowRange(i-patchRadius,i+patchRadius+1)
                               .colRange(j-patchRadius,j+patchRadius+1);
       cv::pow (testPatch-templatePatch, 2, sqrDiff); // store the square difference
                                                      // between corresponding pixels
       sqrDiffSum = cv::sum (sqrDiff)[0]; // calculate sum of square differences between patches
-      distance.row(i).col(j) = sqrDiffSum; // store it in distances
+      distance.row(i-patchRadius).col(j-patchRadius) = sqrDiffSum/pow(patchSize,2); // store it in distances
+
+      // count++;
+      // std::cout << count << " ";
     }
   }
 
-  cv::Mat k = this->getWeightingKernel (windowRadius); // initialize weighting kernel
-  cv::multiply (k, distance, distance);
-
   std::vector<cv::Mat> searchWindow_n_distance;
-  searchWindow_n_distance = {templateWindow, distance};
+  searchWindow_n_distance = {_searchWindow_, distance};
 
   return searchWindow_n_distance;
 }
 
 
-double NLM::computeWeighting (cv::Mat distance, cv::Mat templateWindow, double h, double sigma)
+double NLM::computeWeighting (cv::Mat distance, cv::Mat searchWindow, double h, double sigma, int best)
 {
-  cv::Mat ZERO_MAT = cv::Mat::zeros (distance.size(), CV_64FC1);
-  cv::Mat distDiff = distance-2*sigma*sigma;
-  cv::Mat num; cv::max (ZERO_MAT, distDiff, num);
-  cv::Mat x = -1/(h*h)*num;
-  cv::Mat w; cv::exp (x, w);
 
-  double C = cv::sum (w)[0];
-  cv::Mat B_Mat; cv::multiply (templateWindow, w, B_Mat);
-  double B = (1/C)*cv::sum(B_Mat)[0];
+  distance = distance.reshape (1,1);
+  searchWindow = searchWindow.reshape (1,1);
 
-  return B;
+  cv::Mat distIds;
+  cv::sortIdx (distance, distIds, cv::SORT_EVERY_ROW+cv::SORT_ASCENDING);
+  distIds.convertTo (distIds, CV_64FC1);
+
+  int idx;
+  cv::Mat distance_sorted = cv::Mat::zeros (distance.size(), CV_64FC1);
+  cv::Mat corresponding_pixels = cv::Mat::zeros (distance.size(), CV_64FC1);
+  for (int i=0; i<distIds.cols; i++) {
+    idx = distIds.at<double>(0,i);
+    distance_sorted.row(0).col(i) = distance.at<double>(0,idx);
+    corresponding_pixels.row(0).col(i) = searchWindow.at<double>(0,idx);
+  }
+
+  cv::Mat weights = cv::Mat::zeros (distance_sorted.size(),CV_64FC1);
+  double d2, w;
+  for (int i=0; i<best; i++) {
+    d2 = distance_sorted.at<double>(0,i);
+    w = exp(-std::max(d2-2*sigma*sigma, 0.0)/(h*h));
+    weights.row(0).col(i) = w;
+  }
+  weights = weights*(1/cv::sum(weights)[0]);
+
+  cv::Mat product; cv::multiply (weights, corresponding_pixels, product);
+  double denoisedVal = cv::sum (product)[0];
+  // std::cout << product << "\n\n" << denoisedVal << "\n\n";
+  // std::cout << weights << "\n\n" << corresponding_pixels << "\n\n";
+
+  // cv::Mat ZERO_MAT = cv::Mat::zeros (distance.size(), CV_64FC1);
+  // cv::Mat distDiff = distance-2*sigma*sigma;
+  // cv::Mat num; cv::max (ZERO_MAT, distDiff, num);
+  // cv::Mat x = -1/(h*h)*num;
+  // cv::Mat w; cv::exp (x, w);
+  //
+  // double C = cv::sum (w)[0];
+  // cv::Mat B_Mat; cv::multiply (searchWindow, w, B_Mat);
+  // double B = (1/C)*cv::sum(B_Mat)[0];
+  //
+  // return B;
+  return denoisedVal;
 }
 
 
