@@ -22,6 +22,19 @@ int main (int argc, char *argv[])
     NLM nlm_;
 
 
+    // std::string tgt;
+    // std::cin >> tgt;
+    // histogramProcess histo2_ (tgt);
+    // // cv::Mat out = histo_.matchHistogram (tgt, true);
+
+    // cv::imshow("match source", histo_.ColorImg);
+    // cv::imshow("match target in", cv::imread(tgt, cv::IMREAD_COLOR));
+    // cv::imshow ("match target out", histo_.matchHistogram (tgt, true));
+    // cv::imshow ("equalized target", histo2_.getEqlColor());
+
+    // cv::waitKey(0);
+
+
 
     char grayOrColor;
     bool noOptionSelected = true;
@@ -43,9 +56,10 @@ int main (int argc, char *argv[])
                  "2. Apply Adaptive Filter\n"
                  "3. Run k-Means Segmentation\n"
                  "4. Get Equalized Image\n"
-                 "5. Peform NLM denoising\n";
+                 "5. Perform Histogram matching with a target image\n"
+                 "6. Peform NLM denoising\n";
     if (grayOrColor == 'g' || grayOrColor == 'G') {
-        std::cout << "6. Apply a kernel (options will be provided).\n";
+        std::cout << "7. Apply a kernel (options will be provided).\n";
     }
 
     int option, windowSize;
@@ -97,6 +111,14 @@ int main (int argc, char *argv[])
                     break;
                 }
                 case 5: {
+                    std::cout << "Enter the path the target image:\n";
+                    std::string targetPath;
+                    std::cin >> targetPath;
+                    out = histo_.matchHistogram (targetPath, false);
+                    noOptionSelected = false;
+                    break;
+                }
+                case 6: {
                     std::cout << "Please enter SPACE separated values for\n"
                                  "   h  sigma  patchRadius  windowRadius\n"
                                  "in that order\n"
@@ -109,7 +131,7 @@ int main (int argc, char *argv[])
                     noOptionSelected = false;
                     break;
                 }
-                case 6: {
+                case 7: {
                     std::cout << "Select which kernel to apply:\n"
                                  "1. Sharpen\n"
                                  "2. Blur\n"
@@ -175,6 +197,14 @@ int main (int argc, char *argv[])
                     break;
                 }
                 case 5: {
+                    std::cout << "Enter the path the target image:\n";
+                    std::string targetPath;
+                    std::cin >> targetPath;
+                    out = histo_.matchHistogram (targetPath, true);
+                    noOptionSelected = false;
+                    break;
+                }
+                case 6: {
                     std::cout << "Please enter SPACE separated values for\n"
                                  "   h  sigma  patchRadius  windowRadius\n"
                                  "in that order\n"

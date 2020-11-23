@@ -217,22 +217,37 @@ std::vector<cv::Mat> imageProcess::kmeansSegmentation (int selection, bool choos
 		IMG = ColorImg;
 	}
 
-	cv::namedWindow ("Select Pixels", cv::WINDOW_NORMAL);
-	cv::resizeWindow ("Select Pixels", 640, 480);
-	cv::Mat xyz;
-	cv::setMouseCallback ("Select Pixels", this->leftMouseClick, &xyz);
-	cv::imshow ("Select Pixels", IMG);
-	cv::waitKey(0);
+	// cv::namedWindow ("Select Pixels", cv::WINDOW_NORMAL);
+	// cv::resizeWindow ("Select Pixels", 640, 480);
+	// cv::Mat xyz;
+	// cv::setMouseCallback ("Select Pixels", this->leftMouseClick, &xyz);
+	// cv::imshow ("Select Pixels", IMG);
+	// cv::waitKey(0);
 
-	std::cout << "Select a minimum of 2 points.\n"
-				 "Enter R to reset and clear your selection.\n"
-				 "Enter V to verify your selection.\n"
-				 "Enter Q to quit.\n\n";
+	// std::cout << "Select a minimum of 2 points.\n"
+	// 			 "Enter R to reset and clear your selection.\n"
+	// 			 "Enter V to verify your selection.\n"
+	// 			 "Enter Q to quit.\n\n";
 
-	char key1;
-	bool selectingPixels = true;
+	// char key1;
+	// bool selectingPixels = true;
 
 	if (choose==true) {
+		cv::namedWindow ("Select Pixels", cv::WINDOW_NORMAL);
+		cv::resizeWindow ("Select Pixels", 640, 480);
+		cv::Mat xyz;
+		cv::setMouseCallback ("Select Pixels", this->leftMouseClick, &xyz);
+		cv::imshow ("Select Pixels", IMG);
+		cv::waitKey(0);
+
+		std::cout << "Select a minimum of 2 points.\n"
+					"Enter R to reset and clear your selection.\n"
+					"Enter V to verify your selection.\n"
+					"Enter Q to quit.\n\n";
+
+		char key1;
+		bool selectingPixels = true;
+
 		while (1) {
 			key1 = cv::waitKey(1);
 

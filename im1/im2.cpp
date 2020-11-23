@@ -7,8 +7,6 @@
 
 
 
-
-
 cv::Mat histogramProcess::NULL_MAT;
 
 
@@ -74,8 +72,10 @@ std::vector<int> histogramProcess::getImageHistogram (cv::Mat image, bool showPl
 }
 
 
-std::vector<int> histogramProcess::getCumulativeImageHist (bool showPlot, bool saveFig) {
-  std::vector<int> intensityFreqs = this->getImageHistogram (GrayImg);
+std::vector<int> histogramProcess::getCumulativeImageHist (cv::Mat cn, bool showPlot, bool saveFig) {
+  if (cn.empty()) cn = GrayImg;
+  
+  std::vector<int> intensityFreqs = this->getImageHistogram (cn);
   std::vector<int> cumulativeFreq(256);
 
   for (int i=0; i<cumulativeFreq.size(); i++) {
@@ -185,7 +185,7 @@ cv::Mat histogramProcess::getEqualizedImage (cv::Mat image, bool showPlot, bool 
     // close python shell
     Py_Finalize();
 
-    //delete csv file
+    // delete csv file
     std::remove ("data.csv");
   }
 
@@ -207,7 +207,61 @@ cv::Mat histogramProcess::getEqlColor () {
   r = this->getEqualizedImage (bgr[2]);
 
   std::vector<cv::Mat> bgrOut = {b,g,r};
-  cv::Mat imageOut; cv::merge(bgrOut, imageOut);
+  cv::Mat imageOut; cv::merge (bgrOut, imageOut);
+
+  return imageOut;
+}
+
+
+cv::Mat histogramProcess::matchHistogram_cn (cv::Mat src, cv::Mat tgt) {
+  // get cdf for source image and target image
+  std::vector<int> cdfSrc = this->getCumulativeImageHist (src);
+  std::vector<int> cdfTgt = this->getCumulativeImageHist (tgt);
+
+  // normalise the cdf values using the value in the last bin
+  // and use the max values of each pixel intensity, i.e. out of cdfSrc and cdfTgt
+  std::vector<double> cdf_Out(256);
+  double cdfS_max = cdfSrc[255]; double cdfT_max = cdfTgt[255];
+  for (int i=0; i<cdfSrc.size(); i++) { cdf_Out[i] = std::max(cdfSrc[i]/cdfS_max, cdfTgt[i]/cdfT_max); }
+
+  cv::Mat tgt_copy = tgt.reshape (1,1);
+  tgt_copy.convertTo (tgt_copy, CV_64FC1);
+  
+  int p;
+  for (int i=0; i<tgt_copy.cols; i++) {
+    p = tgt_copy.at<double>(0,i);
+    tgt_copy.row(0).col(i) = cdf_Out[p]*255;
+  }
+
+  tgt_copy = tgt_copy.reshape (1, tgt.rows);
+  tgt_copy.convertTo (tgt_copy, CV_8UC1);
+
+  return tgt_copy;
+}
+
+
+cv::Mat histogramProcess::matchHistogram (std::string tgtPath, bool rgb) {
+  cv::Mat imageOut;
+  
+  if (rgb)
+  {
+    cv::Mat tgt = cv::imread (tgtPath, cv::IMREAD_COLOR);
+    cv::Mat bgr_src[3]; cv::split (ColorImg, bgr_src);
+    cv::Mat bgr_tgt[3]; cv::split (tgt, bgr_tgt);
+
+    cv::Mat tgt_b, tgt_g, tgt_r;
+    tgt_b = this->matchHistogram_cn (bgr_src[0], bgr_tgt[0]);
+    tgt_g = this->matchHistogram_cn (bgr_src[1], bgr_tgt[1]);
+    tgt_r = this->matchHistogram_cn (bgr_src[2], bgr_tgt[2]);
+
+    std::vector<cv::Mat> v = {tgt_b, tgt_g, tgt_r};
+    cv::merge (v, imageOut);
+  }
+  else
+  {
+    cv::Mat tgt = cv::imread (tgtPath, cv::IMREAD_GRAYSCALE);
+    imageOut = this->matchHistogram_cn (GrayImg, tgt);
+  }
 
   return imageOut;
 }
