@@ -44,6 +44,9 @@ class imageKernel
 		customInput ();
 
 		cv::Mat
+		Gaussian (double sigma, int r=1);
+
+		cv::Mat
 		SelectAnOption (int option);
 
 	private:

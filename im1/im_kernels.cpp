@@ -12,13 +12,16 @@ imageKernel::imageKernel (std::string IMAGE_FILE_PATH)
 
 cv::Mat imageKernel::applyKernel (cv::Mat kernel)
 {
-	cv::Mat imageOut = cv::Mat::zeros(GrayImg.rows, GrayImg.cols, CV_64FC1);
+	int sz = kernel.rows; int r = (sz-1)/2;
+	cv::Mat imageOut = cv::Mat::zeros (GrayImg.rows, GrayImg.cols, CV_64FC1);
+	cv::Mat imgPad = get::getPaddedImage (GrayImg, r);
+
 	cv::Mat_<double> window;
 	int p;
-
-	for (int i=1; i<GrayImg.rows-1; i++) {
-		for (int j=1; j<GrayImg.cols-1; j++) {
-			window = get::getWindow (GrayImg, 3, i, j);
+	
+	for (int i=r; i<GrayImg.rows-r; i++) {
+		for (int j=r; j<GrayImg.cols-r; j++) {
+			window = get::getWindow (imgPad, sz, i, j);
 			p = cv::sum(window*kernel)[0];
 			imageOut.row(i).col(j) = p;
 		}
@@ -39,96 +42,96 @@ cv::Mat imageKernel::applyKernel (cv::Mat kernel)
 
 cv::Mat imageKernel::sharpen ()
 {
-	std::cout << "Applying Sharpening Kernel..." << "\n";
+	std::cout << "Applying Sharpening Kernel...\n";
 	cv::Mat k = (cv::Mat_<double>(3,3) << 0,-1, 0,
 										 -1, 5,-1,
 										  0,-1, 0);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
 
 cv::Mat imageKernel::blur ()
 {
-	std::cout << "Applying Blurring Kernel..." << "\n";
+	std::cout << "Applying Blurring Kernel...\n";
 	cv::Mat k = (cv::Mat_<double>(3,3) << 0.0625,0.125,0.0625,
 										   0.125, 0.25, 0.125,
 										  0.0625,0.125,0.0625);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
 
 cv::Mat imageKernel::emboss ()
 {
-	std::cout << "Applying Embossing Kernel..." << "\n";
+	std::cout << "Applying Embossing Kernel...\n";
 	cv::Mat k = (cv::Mat_<double>(3,3) << -2,-1, 0,
 										  -1, 1, 1,
 										   0, 1, 2);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
 
 cv::Mat imageKernel::topSobel ()
 {
-	std::cout << "Applying Sobel (Top) Kernel..." << "\n";
+	std::cout << "Applying Sobel (Top) Kernel...\n";
 	cv::Mat k = (cv::Mat_<double>(3,3) << 1, 2, 1,
 										  0, 0, 0,
 										 -1,-2,-1);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
 
 cv::Mat imageKernel::bottomSobel ()
 {
-	std::cout << "Applying Sobel (Bottom) Kernel..." << "\n";
+	std::cout << "Applying Sobel (Bottom) Kernel...\n";
 	cv::Mat k = (cv::Mat_<double>(3,3) << -1,-2,-1,
 										   0, 0, 0,
 										   1, 2, 1);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
 
 cv::Mat imageKernel::leftSobel ()
 {
-	std::cout << "Applying Sobel (Left) Kernel..." << "\n";
+	std::cout << "Applying Sobel (Left) Kernel...\n";
 	cv::Mat k = (cv::Mat_<double>(3,3) << 1, 0,-1,
 										  2, 0,-2,
 										  1, 0,-1);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
 
 cv::Mat imageKernel::rightSobel ()
 {
-	std::cout << "Applying Sobel (Right) Kernel..." << "\n";
+	std::cout << "Applying Sobel (Right) Kernel...\n";
 	cv::Mat k = (cv::Mat_<double>(3,3) << -1, 0, 1,
 										  -2, 0, 2,
 										  -1, 0, 1);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
 
 cv::Mat imageKernel::outline ()
 {
-	std::cout << "Applying Outlining Kernel..." << "\n";
+	std::cout << "Applying Outlining Kernel...\n";
 	cv::Mat k = (cv::Mat_<double>(3,3) << -1,-1,-1,
 										  -1, 8,-1,
 										  -1,-1,-1);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
@@ -140,7 +143,7 @@ cv::Mat imageKernel::smooth ()
 										  1/9,1/9,1/9,
 										  1/9,1/9,1/9);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
@@ -161,15 +164,38 @@ cv::Mat imageKernel::customInput ()
 	cv::Mat k = (cv::Mat_<double>(3,3) << n[0],n[1],n[2],
 										  n[3],n[4],n[5],
 										  n[6],n[7],n[8]);
-	std::cout << "Applying the following custom kernel:" << "\n";
-	std::cout << k << "..." << "\n";
+	std::cout << "Applying the following custom kernel:\n";
+	std::cout << k << "...\n";
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED" << "\n";
+	std::cout << "FINISHED\n";
 	return imageOut;
 }
 
 
-cv::Mat imageKernel::SelectAnOption (int option) {
+cv::Mat imageKernel::Gaussian (double sigma, int r) {
+	int s = 2*r+1;
+	std::cout << "Applying " << s << "x" << s << " Gaussian kernel...\n";
+	
+	double G, n, x, y;
+	cv::Mat k = cv::Mat::zeros (s,s,CV_64FC1);
+	for (int i=0; i<s; i++) {
+		for (int j=0; j<s; j++) {
+			x=i-r; y=j-r;
+			n = -(x*x + y*y)/(2*sigma*sigma);
+			G = 1/(2*M_PI*sigma*sigma) * exp(n);
+			k.row(i).col(j) = G;
+		}
+	}
+	std::cout << k << "\n";
+	cv::Mat imageOut = this->applyKernel (k);
+	std::cout << "FINISHED\n";
+
+	return imageOut;
+}
+
+
+cv::Mat imageKernel::SelectAnOption (int option)
+{
 	cv::Mat imageOut;
 
 	switch (option) {
@@ -201,6 +227,15 @@ cv::Mat imageKernel::SelectAnOption (int option) {
 			imageOut = this->smooth();
 			break;
 		case 10:
+			int r;
+			double sigma;
+			std::cout << "Enter window radius: ";
+			std::cin >> r;
+			std::cout << "Enter sigma value: ";
+			std::cin >> sigma;
+			imageOut = this->Gaussian(sigma, r);
+			break;
+		case 11:
 			imageOut = this->customInput();
 			break;
 		default:

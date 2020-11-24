@@ -142,7 +142,8 @@ int main (int argc, char *argv[])
                                  "7. Right Sobel\n"
                                  "8. Outline\n"
                                  "9. Smooth\n"
-                                 "10.Custom Input Kernel\n";
+                                 "10. Gaussian\n"
+                                 "11.Custom Input Kernel\n";
                     std::cout << "Option: ";
                     int K;
                     std::cin >> K;
