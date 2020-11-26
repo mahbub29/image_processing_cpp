@@ -1,8 +1,13 @@
 #include <iostream>
-#include "get.hpp"
-#include "im_kernels.hpp"
 #include <math.h>
+
 #include <opencv2/core/mat.hpp>
+
+#include <get.hpp>
+#include <im_kernels.hpp>
+
+
+
 
 
 imageKernel::imageKernel (std::string IMAGE_FILE_PATH)

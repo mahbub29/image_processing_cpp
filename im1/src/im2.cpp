@@ -1,9 +1,12 @@
 #include <iostream>
 #include <fstream>
-#include "im2.hpp"
-#include "get.hpp"
 #include <Python.h>
+
 #include <opencv2/core/mat.hpp>
+
+#include <im2.hpp>
+#include <get.hpp>
+
 
 
 
@@ -46,7 +49,7 @@ std::vector<int> histogramProcess::getImageHistogram (cv::Mat image, bool showPl
 
     // init python shell to run python script
     Py_Initialize();
-    char pyFile[] = "plot_histogram.py";
+    char pyFile[] = "python3/plot_histogram.py";
     FILE *fp = _Py_fopen(pyFile, "r");
     // run the script to use matplotlib to plot histogran
     PyRun_SimpleFile(fp, pyFile);
@@ -101,7 +104,7 @@ std::vector<int> histogramProcess::getCumulativeImageHist (cv::Mat cn, bool show
 
     // init python shell to run python script
     Py_Initialize();
-    char pyFile[] = "plot_histogram.py";
+    char pyFile[] = "python3/plot_histogram.py";
     FILE *fp = _Py_fopen(pyFile, "r");
     // run the script to use matplotlib to plot histogran
     PyRun_SimpleFile(fp, pyFile);
@@ -167,7 +170,7 @@ cv::Mat histogramProcess::getEqualizedImage (cv::Mat image, bool showPlot, bool 
 
     // init python shell to run python script
     Py_Initialize();
-    char pyFile[] = "plot_histogram.py";
+    char pyFile[] = "python3/plot_histogram.py";
     FILE *fp = _Py_fopen(pyFile, "r");
     // run the script to use matplotlib to plot histogran
     PyRun_SimpleFile(fp, pyFile);

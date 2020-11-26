@@ -1,14 +1,13 @@
 #include <iostream>
-#include "im1.hpp"
-#include "im2.hpp"
-#include "get.hpp"
-#include "NLM.hpp"
-#include "im_kernels.hpp"
+
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/mat.hpp>
 
-
-
+#include <im1.hpp>
+#include <im2.hpp>
+#include <get.hpp>
+#include <NLM.hpp>
+#include <im_kernels.hpp>
 
 
 int main (int argc, char *argv[])
