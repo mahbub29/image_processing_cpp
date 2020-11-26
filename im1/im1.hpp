@@ -1,10 +1,9 @@
 #ifndef IM1_H_
 #define IM1_H_
 
-
-
 #include <iostream>
-#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/mat.hpp>
 
 
 

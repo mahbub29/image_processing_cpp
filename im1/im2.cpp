@@ -2,8 +2,9 @@
 #include <fstream>
 #include "im2.hpp"
 #include "get.hpp"
-#include <opencv2/opencv.hpp>
 #include <Python.h>
+#include <opencv2/core/mat.hpp>
+
 
 
 

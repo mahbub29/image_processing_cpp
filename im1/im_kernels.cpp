@@ -1,8 +1,8 @@
 #include <iostream>
 #include "get.hpp"
 #include "im_kernels.hpp"
-#include <opencv2/opencv.hpp>
 #include <math.h>
+#include <opencv2/core/mat.hpp>
 
 
 imageKernel::imageKernel (std::string IMAGE_FILE_PATH)
@@ -16,14 +16,59 @@ cv::Mat imageKernel::applyKernel (cv::Mat kernel)
 	cv::Mat imageOut = cv::Mat::zeros (GrayImg.rows, GrayImg.cols, CV_64FC1);
 	cv::Mat imgPad = get::getPaddedImage (GrayImg, r);
 
-	cv::Mat_<double> window;
+	cv::Mat_<double> window, k_window;
 	int p;
+	double total = GrayImg.rows * GrayImg.cols;
+
+	int k_diff_row = GrayImg.rows-r;
+	int k_diff_col = GrayImg.cols-r;
 	
-	for (int i=r; i<GrayImg.rows-r; i++) {
-		for (int j=r; j<GrayImg.cols-r; j++) {
-			window = get::getWindow (imgPad, sz, i, j);
-			p = cv::sum(window*kernel)[0];
+	cv::Mat mulmat;
+
+	int count=0;
+	double progress;
+	
+	for (int i=0; i<GrayImg.rows; i++) {
+		for (int j=0; j<GrayImg.cols; j++) {
+			// window = get::getWindow (imgPad, sz, i, j);
+			// p = cv::sum(window*kernel)[0];
+			// imageOut.row(i).col(j) = p;
+
+			window = get::getWindow (GrayImg, sz, i, j);
+
+			if (i<r) {
+				if (j<r) { k_window = get::getWindow (kernel, sz, sz-i-1, sz-j-1); }
+				else if (j>GrayImg.cols-r-1) {
+					k_diff_col = GrayImg.cols-j-1;
+					k_window = get::getWindow (kernel, sz, sz-i-1, k_diff_col);
+				}
+				else { k_window = get::getWindow (kernel, sz, sz-i-1, r); }
+			}
+			else if (i>GrayImg.rows-r-1) {
+				k_diff_row = GrayImg.rows-i-1;
+				if (j<r) { k_window = get::getWindow (kernel, sz, k_diff_row, sz-j-1); }
+				else if (j>GrayImg.cols-r-1) {
+					k_diff_col = GrayImg.cols-j-1;
+					k_window = get::getWindow (kernel, sz, k_diff_row, k_diff_col);
+				}
+				else { k_window = get::getWindow (kernel, sz, k_diff_row, r); }
+			}
+			else {
+				if (j<r) { k_window = get::getWindow (kernel, sz, r, sz-j-1); }
+				else if (j>GrayImg.cols-r-1) {
+					k_diff_col = GrayImg.cols-j-1;
+					k_window = get::getWindow (kernel, sz, r, k_diff_col);
+				}
+				else { k_window = get::getWindow (kernel, sz, r, r); }
+			}
+
+			cv::multiply (window, k_window, mulmat);
+			p = cv::sum (mulmat)[0];
 			imageOut.row(i).col(j) = p;
+
+			count++;
+			progress = round(count/total*10000)/100;
+			std::cout << "\r" << progress << "%" << std::flush;
 		}
 	}
 
@@ -47,7 +92,7 @@ cv::Mat imageKernel::sharpen ()
 										 -1, 5,-1,
 										  0,-1, 0);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
 	return imageOut;
 }
 
@@ -59,7 +104,7 @@ cv::Mat imageKernel::blur ()
 										   0.125, 0.25, 0.125,
 										  0.0625,0.125,0.0625);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
 	return imageOut;
 }
 
@@ -71,7 +116,7 @@ cv::Mat imageKernel::emboss ()
 										  -1, 1, 1,
 										   0, 1, 2);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
 	return imageOut;
 }
 
@@ -83,7 +128,7 @@ cv::Mat imageKernel::topSobel ()
 										  0, 0, 0,
 										 -1,-2,-1);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
 	return imageOut;
 }
 
@@ -95,7 +140,7 @@ cv::Mat imageKernel::bottomSobel ()
 										   0, 0, 0,
 										   1, 2, 1);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
 	return imageOut;
 }
 
@@ -107,7 +152,7 @@ cv::Mat imageKernel::leftSobel ()
 										  2, 0,-2,
 										  1, 0,-1);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
 	return imageOut;
 }
 
@@ -119,7 +164,7 @@ cv::Mat imageKernel::rightSobel ()
 										  -2, 0, 2,
 										  -1, 0, 1);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
 	return imageOut;
 }
 
@@ -143,7 +188,7 @@ cv::Mat imageKernel::smooth ()
 										  1/9,1/9,1/9,
 										  1/9,1/9,1/9);
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
 	return imageOut;
 }
 
@@ -167,7 +212,8 @@ cv::Mat imageKernel::customInput ()
 	std::cout << "Applying the following custom kernel:\n";
 	std::cout << k << "...\n";
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
+
 	return imageOut;
 }
 
@@ -186,9 +232,9 @@ cv::Mat imageKernel::Gaussian (double sigma, int r) {
 			k.row(i).col(j) = G;
 		}
 	}
-	std::cout << k << "\n";
+
 	cv::Mat imageOut = this->applyKernel (k);
-	std::cout << "FINISHED\n";
+	std::cout << "   [DONE]\n";
 
 	return imageOut;
 }

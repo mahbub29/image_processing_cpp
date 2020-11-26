@@ -1,10 +1,10 @@
 #include <iostream>
-#include <opencv2/opencv.hpp>
 #include <math.h>
 #include "NLM.hpp"
 #include "get.hpp"
 #include <chrono>
 #include <fstream>
+#include <opencv2/core/mat.hpp>
 
 
 

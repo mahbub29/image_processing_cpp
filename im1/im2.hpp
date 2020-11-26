@@ -2,7 +2,7 @@
 #define IM2_H_
 
 #include <iostream>
-#include <opencv2/opencv.hpp>
+#include <opencv2/core/mat.hpp>
 
 
 class histogramProcess

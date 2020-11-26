@@ -4,7 +4,9 @@
 #include "get.hpp"
 #include "NLM.hpp"
 #include "im_kernels.hpp"
-#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/mat.hpp>
+
 
 
 
@@ -12,28 +14,12 @@
 int main (int argc, char *argv[])
 {
     std::string filePath = argv[1];
-    // std::string a = argv[2]; int imType = std::stoi(a);
-    // a = argv[3]; int r = std::stoi(a);
 
     get get_;
     imageProcess imp_ (filePath);
     histogramProcess histo_ (filePath);
     imageKernel kernel_ (filePath);
     NLM nlm_;
-
-
-    // std::string tgt;
-    // std::cin >> tgt;
-    // histogramProcess histo2_ (tgt);
-    // // cv::Mat out = histo_.matchHistogram (tgt, true);
-
-    // cv::imshow("match source", histo_.ColorImg);
-    // cv::imshow("match target in", cv::imread(tgt, cv::IMREAD_COLOR));
-    // cv::imshow ("match target out", histo_.matchHistogram (tgt, true));
-    // cv::imshow ("equalized target", histo2_.getEqlColor());
-
-    // cv::waitKey(0);
-
 
 
     char grayOrColor;

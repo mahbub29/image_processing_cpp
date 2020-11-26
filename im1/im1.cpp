@@ -2,8 +2,9 @@
 #include <ctime>
 #include "im1.hpp"
 #include "get.hpp"
-#include <opencv2/opencv.hpp>
 #include <math.h>
+#include <opencv2/core/mat.hpp>
+
 
 
 std::vector< std::vector<int> > LEFT_CLICKS;

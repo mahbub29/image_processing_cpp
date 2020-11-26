@@ -1,8 +1,11 @@
 
 #include <iostream>
 #include "get.hpp"
-#include <opencv2/opencv.hpp>
 #include <math.h>
+#include <fstream>
+
+#include <opencv2/core/mat.hpp>
+
 
 
 // function to get row range and column range of image window in getWindow() function
@@ -30,44 +33,26 @@ cv::Mat get::getWindow (cv::Mat image, int windowSize, int i, int j)
 	**/
 
 	if (i<limit) {
-		if (j<limit) {
-			window = getRowCol(image, 0, i+limit+1, 0, j+limit+1);
-		} else if (j>width-limit-1) {
-			window = getRowCol(image, 0, i+limit+1, j-limit, width);
-		} else {
-			window = getRowCol(image, 0, i+limit+1, j-limit, j+limit+1);
-		}
+		if (j<limit) { window = getRowCol(image, 0, i+limit+1, 0, j+limit+1); }
+		else if (j>width-limit-1) { window = getRowCol(image, 0, i+limit+1, j-limit, width); }
+		else { window = getRowCol(image, 0, i+limit+1, j-limit, j+limit+1); }
 	}
 	else if (j<limit) {
-		if (i<limit) {
-			window = getRowCol(image, 0, i+limit+1, 0, j+limit+1);
-		} else if (i>height-limit-1) {
-			window = getRowCol(image, i-limit, height, 0, j+limit+1);
-		} else {
-			window = getRowCol(image, i-limit, i+limit+1, 0, j+limit+1);
-		}
+		if (i<limit) { window = getRowCol(image, 0, i+limit+1, 0, j+limit+1); }
+		else if (i>height-limit-1) { window = getRowCol(image, i-limit, height, 0, j+limit+1); }
+		else { window = getRowCol(image, i-limit, i+limit+1, 0, j+limit+1); }
 	}
 	else if (i>height-limit-1) {
-		if (j<limit) {
-			window = getRowCol(image, i-limit, height, 0, j+limit+1);
-		} else if (j>width-limit-1) {
-			window = getRowCol(image, i-limit, height, j-limit, width);
-		} else {
-			window = getRowCol(image, i-limit, height, j-limit, j+limit+1);
-		}
+		if (j<limit) { window = getRowCol(image, i-limit, height, 0, j+limit+1); }
+		else if (j>width-limit-1) { window = getRowCol(image, i-limit, height, j-limit, width); }
+		else { window = getRowCol(image, i-limit, height, j-limit, j+limit+1); }
 	}
 	else if (j>width-limit-1) {
-		if (i<limit) {
-			window = getRowCol(image, 0, i+limit+1, j-limit, width);
-		} else if (i>height-limit-1) {
-			window = getRowCol(image, i-limit, height, j-limit, width);
-		} else {
-			window = getRowCol(image, i-limit, i+limit+1, j-limit, width);
-		}
+		if (i<limit) { window = getRowCol(image, 0, i+limit+1, j-limit, width); }
+		else if (i>height-limit-1) { window = getRowCol(image, i-limit, height, j-limit, width); }
+		else { window = getRowCol(image, i-limit, i+limit+1, j-limit, width); }
 	}
-	else {
-		window = getRowCol(image, i-limit, i+limit+1, j-limit, j+limit+1);
-	}
+	else { window = getRowCol(image, i-limit, i+limit+1, j-limit, j+limit+1); }
 
 	return window;
 }
