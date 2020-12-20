@@ -9,10 +9,6 @@
 class imageKernel
 {
 	public:
-		cv::Mat GrayImg;
-
-		imageKernel (std::string IMAGE_FILE_PATH);
-
 		cv::Mat
 		sharpen ();
 
@@ -43,15 +39,18 @@ class imageKernel
 		cv::Mat
 		customInput ();
 
-		cv::Mat
+		static cv::Mat
 		Gaussian (double sigma, int r=1);
 
 		cv::Mat
-		SelectAnOption (int option);
+		SelectAnOption (cv::Mat img, int option);
 
 	private:
 		cv::Mat
-		applyKernel(cv::Mat kernel);
+		applyKernel(cv::Mat img, cv::Mat kernel);
+
+		cv::Mat
+		apply2channels (cv::Mat img, cv::Mat kernel);
 
 };
 #endif
