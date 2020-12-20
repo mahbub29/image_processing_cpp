@@ -258,7 +258,7 @@ int main (int argc, char *argv[])
         corner_detection corner_(filePath);
 
         cv::Mat in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
-        cv::Mat out = corner_.movarecDetect (1, 5, 500);
+        cv::Mat out = corner_.movarecDetect (2);
 
          if (!out.empty()) {
             cv::namedWindow("Original", cv::WINDOW_NORMAL);

@@ -46,5 +46,9 @@ class get
 		// writes a csv file with for the specified matrix
 		static void
 		writeCSV(std::string filename, cv::Mat m);
+
+		// gets gaussian distributed weighting kernel
+		static cv::Mat
+		getGaussianWeightingKernel (int windowRadius);
 };
 #endif

@@ -12,6 +12,6 @@ class corner_detection
         corner_detection (std::string IMAGE_FILE_PATH);
 
         cv::Mat
-        movarecDetect (int r, double sigma, double threshold);
+        movarecDetect (int r, bool redOVerlay=true, double threshold=1000) ;
 };
 #endif
