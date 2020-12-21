@@ -16,9 +16,6 @@ class NLM
 
   private:
     cv::Mat
-    getWeightingKernel (int padding);
-
-    cv::Mat
     nonLocalMeans_singleChannel (cv::Mat img, double h, double sigma, int patchRadius, int windowRadius, int best);
 
     std::vector<cv::Mat>

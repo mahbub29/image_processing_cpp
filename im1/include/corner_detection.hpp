@@ -12,6 +12,10 @@ class corner_detection
         corner_detection (std::string IMAGE_FILE_PATH);
 
         cv::Mat
-        movarecDetect (int r, bool redOVerlay=true, double threshold=1000) ;
+        movarecDetect (int r=2, bool redOverlay=true, double threshold=1000);
+
+        cv::Mat
+        harrisDetect (int r, bool redOverlay=true, double threshold=2000);
+        
 };
 #endif

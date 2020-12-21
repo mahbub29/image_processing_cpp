@@ -174,21 +174,3 @@ double NLM::computeWeighting (cv::Mat distance, cv::Mat searchWindow, double h, 
   return denoisedVal;
 }
 
-
-cv::Mat NLM::getWeightingKernel (int windowRadius)
-{
-  int f = windowRadius;
-  cv::Mat k = cv::Mat::zeros (2*f+1, 2*f+1, CV_64FC1);
-  double val;
-
-  for (int d=1; d<f+1; d++) {
-    val = 1/pow(2*d+1,2);
-
-    for (int i=-d; i<d+1; i++) {
-      for (int j=-d; j<d+1; j++) {
-        k.row(f-i).col(f-j) += val;
-  }}}
-  k = k/f;
-
-  return k;
-}
