@@ -9,6 +9,8 @@
 #include <NLM.hpp>
 #include <im_kernels.hpp>
 #include <corner_detection.hpp>
+#include <edge_detection.hpp>
+
 
 
 int main (int argc, char *argv[])
@@ -16,8 +18,11 @@ int main (int argc, char *argv[])
     std::string process = argv[1];
     std::string filePath = argv[2];
 
+
+    cv::Mat in, out, colorPalette;
+
     
-    if (process == "optimise")
+    if (process == "optimize")
     {   
         imageProcess imp_ (filePath);
         histogramProcess histo_ (filePath);
@@ -48,7 +53,6 @@ int main (int argc, char *argv[])
 
         int option, windowSize;
         noOptionSelected = true;
-        cv::Mat out, colorPalette;
 
         while (noOptionSelected) {
             std::cin >> option;
@@ -231,43 +235,44 @@ int main (int argc, char *argv[])
             }
         }
 
-        cv::Mat in;
+        
         if (grayOrColor == 'g' || grayOrColor == 'G') {
             in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
         } else {
             in = cv::imread (filePath, cv::IMREAD_COLOR);
         }
 
-        if (!out.empty()) {
-            cv::namedWindow("Original", cv::WINDOW_NORMAL);
-            cv::namedWindow("Output", cv::WINDOW_NORMAL);
-            cv::resizeWindow("Original",640,480);
-            cv::resizeWindow("Output",640,480);
-            cv::imshow ("Original", in);
-            cv::imshow ("Output", out);
-        }
-
-        if (!colorPalette.empty()) {
-            cv::namedWindow("k-Means Color Palette", cv::WINDOW_NORMAL);
-            cv::resizeWindow("k-Means Color Palette", 640, 250);
-            cv::imshow ("k-Means Color Palette", colorPalette);
-        }
     }
     else if (process == "dcorner")
     {
         corner_detection corner_(filePath);
 
-        cv::Mat in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
-        cv::Mat out = corner_.harrisDetect (1, true, 3000);
+        in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
+        out = corner_.harrisDetect (1);
+    }
+    else if (process == "dedge")
+    {
+        edge_detection edge_(filePath);
 
-         if (!out.empty()) {
-            cv::namedWindow("Original", cv::WINDOW_NORMAL);
-            cv::namedWindow("Output", cv::WINDOW_NORMAL);
-            cv::resizeWindow("Original",640,480);
-            cv::resizeWindow("Output",640,480);
-            cv::imshow ("Original", in);
-            cv::imshow ("Output", out);
-        }
+        in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
+        out = edge_.sobelEdgeDetect (false);
+    }
+
+
+    // output windows
+    if (!out.empty()) {
+        cv::namedWindow("Original", cv::WINDOW_NORMAL);
+        cv::namedWindow("Output", cv::WINDOW_NORMAL);
+        cv::resizeWindow("Original",640,480);
+        cv::resizeWindow("Output",640,480);
+        cv::imshow ("Original", in);
+        cv::imshow ("Output", out);
+    }
+
+    if (!colorPalette.empty()) {
+        cv::namedWindow("k-Means Color Palette", cv::WINDOW_NORMAL);
+        cv::resizeWindow("k-Means Color Palette", 640, 250);
+        cv::imshow ("k-Means Color Palette", colorPalette);
     }
 
     cv::waitKey(0);

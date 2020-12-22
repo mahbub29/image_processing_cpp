@@ -4,6 +4,8 @@
 #include <iostream>
 #include <opencv2/core/mat.hpp>
 
+
+
 class corner_detection
 {
     public:
@@ -15,7 +17,7 @@ class corner_detection
         movarecDetect (int r=2, bool redOverlay=true, double threshold=1000);
 
         cv::Mat
-        harrisDetect (int r, bool redOverlay=true, double threshold=2000);
+        harrisDetect (int r=1, bool redOverlay=true, double threshold=3000, double lim=20);
         
 };
 #endif

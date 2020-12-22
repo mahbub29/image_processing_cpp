@@ -1,12 +1,10 @@
 #include <iostream>
 
-#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
 
 #include <corner_detection.hpp>
 #include <get.hpp>
-#include <im_kernels.hpp>
 
 
 
@@ -94,12 +92,14 @@ cv::Mat corner_detection::movarecDetect (int r, bool redOverlay, double threshol
         cornerMap.convertTo (out, CV_8UC1);
     }
 
+    std::cout << "   [DONE]\n";
+
     return out;
 }
 
 
 
-cv::Mat corner_detection::harrisDetect (int r, bool redOverlay,  double threshold)
+cv::Mat corner_detection::harrisDetect (int r, bool redOverlay,  double threshold, double lim )
 {
     cv::Mat img; grayImg.convertTo (img, CV_64FC1);
 
@@ -122,13 +122,27 @@ cv::Mat corner_detection::harrisDetect (int r, bool redOverlay,  double threshol
     int count = 0;
     double progress;
     double total = (img.rows-2*bound)*(img.cols-2*bound);
+    double pmin, pmax, pmid, ptop, pbottom, pleft, pright;
     int num_elements = windowSize*windowSize;
 
     for (int i=bound; i<img.rows-bound; i++) {
         for (int j=bound; j<img.cols-bound; j++) {
             p = get::getWindow (img, windowSize, i, j);
 
-            if (abs(img.at<double>(i,j) - cv::sum(p)[0]/num_elements)>100) count++;
+            pmid = img.at<double>(i,j);
+
+            pmin = pmid - lim;
+            pmax = pmid + lim;
+
+            ptop = img.at<double>(i,j-1);
+            pbottom = img.at<double>(i,j+1);
+            pleft = img.at<double>(i-1,j);
+            pright = img.at<double>(i+1,j);
+
+            if (pleft>pmin && pleft<pmax&&
+                pright>pmin && pright<pmax&&
+                ptop>pmin && ptop<pmax&&
+                pbottom>pmin && pbottom<pmax) count++;
             else {
                 for (int y=1; y<p.rows-1; y++) {
                     for (int x=1; x<p.cols-1; x++) {
@@ -156,13 +170,12 @@ cv::Mat corner_detection::harrisDetect (int r, bool redOverlay,  double threshol
 
                 count++;
             }
-
             
 			progress = round(count/total*10000)/100;
 			std::cout << "\r" << progress << "%" << std::flush;
         }
     }
-    std::cout << count << "\n";
+
 
     cv::Mat out;
     if (redOverlay) {
@@ -172,7 +185,8 @@ cv::Mat corner_detection::harrisDetect (int r, bool redOverlay,  double threshol
     } else {
         cornerMap.convertTo (out, CV_8UC1);
     }
+
+    std::cout << "   [DONE]\n";
             
     return out;
-
 }

@@ -39,7 +39,7 @@ class imageKernel
 		cv::Mat
 		customInput ();
 
-		static cv::Mat
+		cv::Mat
 		Gaussian (double sigma, int r=1);
 
 		cv::Mat

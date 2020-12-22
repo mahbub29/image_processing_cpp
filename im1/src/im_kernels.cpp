@@ -12,7 +12,6 @@ cv::Mat imageKernel::applyKernel (cv::Mat img, cv::Mat kernel)
 {
 	int sz = kernel.rows; int r = (sz-1)/2;
 	cv::Mat imageOut = cv::Mat::zeros (img.rows, img.cols, CV_64FC1);
-	cv::Mat imgPad = get::getPaddedImage (img, r);
 
 	cv::Mat_<double> window, k_window;
 	int p;
@@ -28,9 +27,6 @@ cv::Mat imageKernel::applyKernel (cv::Mat img, cv::Mat kernel)
 	
 	for (int i=0; i<img.rows; i++) {
 		for (int j=0; j<img.cols; j++) {
-			// window = get::getWindow (imgPad, sz, i, j);
-			// p = cv::sum(window*kernel)[0];
-			// imageOut.row(i).col(j) = p;
 
 			window = get::getWindow (img, sz, i, j);
 
@@ -78,6 +74,8 @@ cv::Mat imageKernel::applyKernel (cv::Mat img, cv::Mat kernel)
 
 	// Convert image to uint8
 	imageOut.convertTo(imageOut, CV_8UC1);
+
+	std::cout << "   [DONE]\n";
 
 	return imageOut;
 }
