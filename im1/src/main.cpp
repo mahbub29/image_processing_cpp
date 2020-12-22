@@ -14,7 +14,7 @@
 
 
 int main (int argc, char *argv[])
-{
+{    
     std::string process = argv[1];
     std::string filePath = argv[2];
 
@@ -161,28 +161,49 @@ int main (int argc, char *argv[])
                 }
             }
         }
-
         
         if (useColor) {
             in = cv::imread (filePath, cv::IMREAD_COLOR);
         } else {
             in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
         }
-
     }
     else if (process == "dcorner")
     {
         corner_detection corner_(filePath);
 
         in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
-        out = corner_.harrisDetect (1);
+
+        if (argc>3) {
+            int r = std::stoi(argv[3]);
+            if (argc>4) {
+                bool overlay = std::stoi(argv[4]);
+                if (argc>5) {
+                    double threshold = std::stof(argv[5]);
+                    if (argc>6) {
+                        double lim = std::stof(argv[6]);
+                        out = corner_.harrisDetect (r, overlay, threshold, lim);
+                    } else out = corner_.harrisDetect (r, overlay, threshold);
+                } else out = corner_.harrisDetect (r, overlay);
+            } else out = corner_.harrisDetect (r);
+        }
+        else out = corner_.harrisDetect ();
+
     }
     else if (process == "dedge")
     {
         edge_detection edge_(filePath);
 
         in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
-        out = edge_.sobelEdgeDetect (false);
+
+        if (argc>3) {
+            int overlay = std::stoi(argv[3]);
+            if (argc>4) {
+                double threshold = std::stof(argv[4]);
+                out = edge_.sobelEdgeDetect (overlay, threshold);
+            } else out = edge_.sobelEdgeDetect (overlay);
+        }
+        else out = edge_.sobelEdgeDetect ();
     }
 
 
