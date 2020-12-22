@@ -18,12 +18,13 @@ int main (int argc, char *argv[])
     std::string process = argv[1];
     std::string filePath = argv[2];
 
-
     cv::Mat in, out, colorPalette;
 
     
     if (process == "optimize")
     {   
+        bool useColor = std::stoi(argv[3]);
+
         imageProcess imp_ (filePath);
         histogramProcess histo_ (filePath);
         imageKernel kernel_;
@@ -32,15 +33,15 @@ int main (int argc, char *argv[])
         char grayOrColor;
         bool noOptionSelected = true;
 
-        std::cout << "Enter G for Grayscale or C for Color and press ENTER: ";
-        while (noOptionSelected) {
-            std::cin >> grayOrColor;
-            if (grayOrColor == 'g' || grayOrColor == 'G' || grayOrColor == 'c' || grayOrColor == 'C') {
-                noOptionSelected = false;
-            } else {
-                std::cout << "ERROR: That is not an option. Select G or C.\n";
-            }
-        }
+        // std::cout << "Enter G for Grayscale or C for Color and press ENTER: ";
+        // while (noOptionSelected) {
+        //     std::cin >> grayOrColor;
+        //     if (grayOrColor == 'g' || grayOrColor == 'G' || grayOrColor == 'c' || grayOrColor == 'C') {
+        //         noOptionSelected = false;
+        //     } else {
+        //         std::cout << "ERROR: That is not an option. Select G or C.\n";
+        //     }
+        // }
 
         std::cout << "Enter the number of the process you would like to run and press ENTER.\n"
                     "1. Apply Median Filter\n"
@@ -51,195 +52,131 @@ int main (int argc, char *argv[])
                     "6. Peform NLM denoising\n"
                     "7. Apply a kernel (options will be provided).\n";
 
-        int option, windowSize;
+        int option, windowRadius, windowSize;
         noOptionSelected = true;
 
         while (noOptionSelected) {
             std::cin >> option;
-            if (grayOrColor == 'g' || grayOrColor == 'G') {
-                switch (option) {
-                    case 1: {
-                        while (noOptionSelected) {
-                            std::cout << "Enter window size (must be odd INT): ";
-                            std::cin >> windowSize;
-                            if (windowSize%2 != 1) {
-                                std::cout << "ERROR: windowSize must be odd INT\n";
-                            } else {
-                                noOptionSelected = false;
-                            }
-                        }
-                        out = imp_.medianFilterGray (windowSize);
-                        break;
-                    }
-                    case 2: {
-                        while (noOptionSelected) {
-                            std::cout << "Enter window size (must be odd INT): ";
-                            std::cin >> windowSize;
-                            if (windowSize%2 != 1) {
-                                std::cout << "ERROR: windowSize must be odd INT\n";
-                            } else {
-                                noOptionSelected = false;
-                            }
-                        }
-                        out = imp_.adaptiveFilterGray (windowSize);
-                        break;
-                    }
-                    case 3: {
-                        std::vector<cv::Mat> imOut_n_paletteOut = imp_.kmeansSegmentation (imp_.GRAYSCALE, false);
-                        out = imOut_n_paletteOut[0];
-                        colorPalette = imOut_n_paletteOut[1];
-                        noOptionSelected = false;
-                        break;
-                    }
-                    case 4: {
-                        std::cout << "Equalizing image...\n";
-                        out = histo_.getEqualizedImage ();
-                        std::cout << "Press any key to Quit.\n";
-                        noOptionSelected = false;
-                        break;
-                    }
-                    case 5: {
-                        std::cout << "Enter the path the target image:\n";
-                        std::string targetPath;
-                        std::cin >> targetPath;
-                        out = histo_.matchHistogram (targetPath, false);
-                        noOptionSelected = false;
-                        break;
-                    }
-                    case 6: {
-                        std::cout << "Please enter SPACE separated values for\n"
-                                    "   h  sigma  patchRadius  windowRadius\n"
-                                    "in that order\n"
-                                    "Values: ";
-                        std::vector<double> val(4);
-                        for (int i=0; i<4; i++) { std::cin >> val[i]; }
-                        cv::Mat gI = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
-                        double h=val[0]; double sigma=val[1]; int pR=val[2]; int wR=val[3];
-                        out = nlm_.nonLocalMeans (gI,h,sigma,pR,wR);
-                        noOptionSelected = false;
-                        break;
-                    }
-                    case 7: {
-                        std::cout << "Select which kernel to apply:\n"
-                                    "1. Sharpen\n"
-                                    "2. Blur\n"
-                                    "3. Emboss\n"
-                                    "4. Top Sobel\n"
-                                    "5. Bottom Sobel\n"
-                                    "6. Left Sobel\n"
-                                    "7. Right Sobel\n"
-                                    "8. Outline\n"
-                                    "9. Smooth\n"
-                                    "10. Gaussian\n"
-                                    "11.Custom Input Kernel\n";
-                        std::cout << "Option: ";
-                        int K;
-                        std::cin >> K;
-                        cv::Mat grayImg = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
-                        out = kernel_.SelectAnOption(grayImg, K);
-                        noOptionSelected = false;
-                        break;
-                    }
-                    default: {
-                        std::cout << "ERROR: "<< option << " is not an option.\n";
-                    }
+
+            switch (option) {
+                case 1: {
+                    std::cout << "Enter window radius: ";
+                    std::cin >> windowRadius; windowSize = 2*windowRadius+1;
+
+                    if (useColor) out = imp_.medianFilterRGB (windowSize);
+                    else out = imp_.medianFilterGray (windowSize);
+
+                    noOptionSelected = false;
+
+                    break;
                 }
-            } else {
-                switch (option) {
-                    case 1: {
-                        while (noOptionSelected) {
-                            std::cout << "Enter window size (must be odd INT): ";
-                            std::cin >> windowSize;
-                            if (windowSize%2 != 1) {
-                                std::cout << "ERROR: windowSize must be odd INT\n";
-                            } else {
-                                noOptionSelected = false;
-                            }
-                        }
-                        out = imp_.medianFilterRGB (windowSize);
-                        break;
+                case 2: {
+                    std::cout << "Enter window radius: ";
+                    std::cin >> windowRadius; windowSize = 2*windowRadius+1;
+
+                    if (useColor) out = imp_.adaptiveFilterColor (windowSize);
+                    else out = imp_.adaptiveFilterGray (windowSize);
+
+                    noOptionSelected = false;
+
+                    break;
+                }
+                case 3: {
+                    std::vector<cv::Mat> imOut_n_paletteOut;
+
+                    if (useColor) imOut_n_paletteOut = imp_.kmeansSegmentation (imp_.COLOR, false);
+                    else imOut_n_paletteOut = imp_.kmeansSegmentation (imp_.GRAYSCALE, false);
+
+                    out = imOut_n_paletteOut[0];
+                    colorPalette = imOut_n_paletteOut[1];
+                    noOptionSelected = false;
+
+                    break;
+                }
+                case 4: {
+                    std::cout << "Equalizing image...\n";
+                    
+                    if (useColor) out = histo_.getEqlColor ();
+                    else out = histo_.getEqualizedImage ();
+                    
+                    std::cout << "Press any key to Quit.\n";
+                    noOptionSelected = false;
+
+                    break;
+                }
+                case 5: {
+                    std::cout << "Enter the path the target image:\n";
+                    std::string targetPath;
+                    std::cin >> targetPath;
+
+                    if (useColor) out = histo_.matchHistogram (targetPath, true);
+                    else out = histo_.matchHistogram (targetPath, false);
+                    
+                    noOptionSelected = false;
+                    
+                    break;
+                }
+                case 6: {
+                    std::cout << "Please enter SPACE separated values for\n"
+                                "   h  sigma  patchRadius  windowRadius\n"
+                                "in that order\n"
+                                "Values: ";
+                    std::vector<double> val(4);
+
+                    for (int i=0; i<4; i++) { std::cin >> val[i]; }
+                    
+                    cv::Mat img;
+                    if (useColor) img = cv::imread (filePath, cv::IMREAD_COLOR); 
+                    else img = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
+
+                    double h=val[0]; double sigma=val[1]; int pR=val[2]; int wR=val[3];
+                    out = nlm_.nonLocalMeans (img,h,sigma,pR,wR);
+
+                    noOptionSelected = false;
+
+                    break;
+                }
+                case 7: {
+                    std::cout << "Select which kernel to apply:\n"
+                                "1. Sharpen\n"
+                                "2. Blur\n"
+                                "3. Emboss\n"
+                                "4. Top Sobel\n"
+                                "5. Bottom Sobel\n"
+                                "6. Left Sobel\n"
+                                "7. Right Sobel\n"
+                                "8. Outline\n"
+                                "9. Smooth\n"
+                                "10. Gaussian\n"
+                                "11.Custom Input Kernel\n";
+                    std::cout << "Option: ";
+                    int K;
+                    std::cin >> K;
+
+                    cv::Mat img;
+                    if (useColor) {
+                        img = cv::imread (filePath, cv::IMREAD_COLOR);
+                        out = kernel_.SelectAnOption(img, K);
+                    } else {
+                        img = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
+                        out = kernel_.SelectAnOption(img, K);
                     }
-                    case 2: {
-                        while (noOptionSelected) {
-                            std::cout << "Enter window size (must be odd INT): ";
-                            std::cin >> windowSize;
-                            if (windowSize%2 != 1) {
-                                std::cout << "ERROR: windowSize must be odd INT\n";
-                            } else {
-                                noOptionSelected = false;
-                            }
-                        }
-                        out = imp_.adaptiveFilterColor (windowSize);
-                        break;
-                    }
-                    case 3: {
-                        std::vector<cv::Mat> imOut_n_paletteOut = imp_.kmeansSegmentation (imp_.COLOR, false);
-                        out = imOut_n_paletteOut[0];
-                        colorPalette = imOut_n_paletteOut[1];
-                        noOptionSelected = false;
-                        break;
-                    }
-                    case 4: {
-                        std::cout << "Equalizing image...\n";
-                        out = histo_.getEqlColor ();
-                        noOptionSelected = false;
-                        std::cout << "Press any key to Quit.\n";
-                        break;
-                    }
-                    case 5: {
-                        std::cout << "Enter the path the target image:\n";
-                        std::string targetPath;
-                        std::cin >> targetPath;
-                        out = histo_.matchHistogram (targetPath, true);
-                        noOptionSelected = false;
-                        break;
-                    }
-                    case 6: {
-                        std::cout << "Please enter SPACE separated values for\n"
-                                    "   h  sigma  patchRadius  windowRadius\n"
-                                    "in that order\n"
-                                    "Values: ";
-                        std::vector<double> val(4);
-                        for (int i=0; i<4; i++) { std::cin >> val[i]; }
-                        cv::Mat cI = cv::imread (filePath, cv::IMREAD_COLOR);
-                        double h=val[0]; double sigma=val[1]; int pR=val[2]; int wR=val[3];
-                        out = nlm_.nonLocalMeans (cI,h,sigma,pR,wR);
-                        noOptionSelected = false;
-                        break;
-                    }
-                    case 7: {
-                        std::cout << "Select which kernel to apply:\n"
-                                    "1. Sharpen\n"
-                                    "2. Blur\n"
-                                    "3. Emboss\n"
-                                    "4. Top Sobel\n"
-                                    "5. Bottom Sobel\n"
-                                    "6. Left Sobel\n"
-                                    "7. Right Sobel\n"
-                                    "8. Outline\n"
-                                    "9. Smooth\n"
-                                    "10. Gaussian\n"
-                                    "11.Custom Input Kernel\n";
-                        std::cout << "Option: ";
-                        int K;
-                        std::cin >> K;
-                        cv::Mat colorImg = cv::imread (filePath, cv::IMREAD_COLOR);
-                        out = kernel_.SelectAnOption(colorImg, K);
-                        noOptionSelected = false;
-                        break;
-                    }
-                    default: {
-                        std::cout << "ERROR: "<< option << " is not an option.\n";
-                    }
+
+                    noOptionSelected = false;
+
+                    break;
+                }
+                default: {
+                    std::cout << "ERROR: "<< option << " is not an option.\n";
                 }
             }
         }
 
         
-        if (grayOrColor == 'g' || grayOrColor == 'G') {
-            in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
-        } else {
+        if (useColor) {
             in = cv::imread (filePath, cv::IMREAD_COLOR);
+        } else {
+            in = cv::imread (filePath, cv::IMREAD_GRAYSCALE);
         }
 
     }
