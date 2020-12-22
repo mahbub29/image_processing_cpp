@@ -33,16 +33,6 @@ int main (int argc, char *argv[])
         char grayOrColor;
         bool noOptionSelected = true;
 
-        // std::cout << "Enter G for Grayscale or C for Color and press ENTER: ";
-        // while (noOptionSelected) {
-        //     std::cin >> grayOrColor;
-        //     if (grayOrColor == 'g' || grayOrColor == 'G' || grayOrColor == 'c' || grayOrColor == 'C') {
-        //         noOptionSelected = false;
-        //     } else {
-        //         std::cout << "ERROR: That is not an option. Select G or C.\n";
-        //     }
-        // }
-
         std::cout << "Enter the number of the process you would like to run and press ENTER.\n"
                     "1. Apply Median Filter\n"
                     "2. Apply Adaptive Filter\n"
