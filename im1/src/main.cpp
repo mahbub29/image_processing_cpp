@@ -23,7 +23,9 @@ int main (int argc, char *argv[])
     
     if (process == "optimize")
     {   
-        bool useColor = std::stoi(argv[3]);
+        bool useColor;
+        if (argc==4) useColor = std::stoi(argv[3]);
+        else useColor = 1;
 
         imageProcess imp_ (filePath);
         histogramProcess histo_ (filePath);
